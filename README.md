@@ -1,5 +1,5 @@
-LAUDATIO-Repository
-===================
+LAUDATIO-Repository Version 1.1
+===============================
 
 Copyright: © 2016 Computer- and Media Service, Humboldt-Universität zu Berlin
   License: GNU GENERAL PUBLIC LICENSE 3.0
@@ -16,8 +16,8 @@ http://www.laudatio-repository.org
 
 Used software tools
 ===================
-  Fedora Commons
-  --------------
+  <b>Fedora Commons</b>
+  ---------------------
   Version 3.7
   
   <b>Installation</b><br>
@@ -64,8 +64,8 @@ Used software tools
   Further details e.g. to fedora data model or which files we are stored in fedora can you find at here:
   http://www.laudatio-repository.org/repository/technical-documentation/software/fedora.html#files
 
-  Graphical User Interface with CakePHP
-  -------------------------------------
+  <b>Graphical User Interface with CakePHP</b>
+  --------------------------------------------
   We are using CakePHP, a PHP MVC Framework, in Version 2.4.5
   For installation details see:
   http://book.cakephp.org/2.0/en/installation.html
@@ -82,8 +82,8 @@ Used software tools
   The Configuration Controller provides methods for the repository administrators. That includes the configuration of the used scheme for uploading corpora, the view configuration, a form to upload new schemes, buttons to reindex all corpora in elasticsearch and to update all handle pids.
 
 
-  ElasticSearch
-  -------------
+  <b>SearchEngine ElasticSearch</b>
+  ---------------------------------
   Installation details can be found here:
 
   <b>API</b><br> 
@@ -98,8 +98,8 @@ Used software tools
   Further details to indexing and mapping find here:
   http://www.laudatio-repository.org/repository/technical-documentation/software/elasticsearch.html
 
-  PID-system (handle)
-  -------------------
+  <b>PID-system (handle)</b>
+  --------------------------
   
   <b>API</b><br>
   We are used the API provided by EUROPEAN Persistent Identifier Consortium (EPIC) in Version 2.
