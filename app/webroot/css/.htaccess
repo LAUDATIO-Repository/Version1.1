@@ -1,0 +1,11 @@
+<IfModule mod_rewrite.c>
+	RewriteEngine on
+    
+	<Files "*.*">
+		Deny from all
+	</Files>
+
+	<FilesMatch "\.(css|jpg|png|gif|png)$">
+		Allow from all
+	</FilesMatch>
+</IfModule>

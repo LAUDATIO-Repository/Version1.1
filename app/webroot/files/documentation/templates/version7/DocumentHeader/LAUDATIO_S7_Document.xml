@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="http://korpling.german.hu-berlin.de/schemata/laudatio/teiODD_LAUDATIODocument_Scheme7.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+    <teiHeader type="DocumentHeader" style="NA">
+        <fileDesc xml:id="NA">
+            <titleStmt>
+                <title>NA</title>
+                <author>
+                    <forename>NA</forename>
+                    <surname>NA</surname>
+                </author>
+                <editor>
+                    <forename>NA</forename>
+                    <surname>NA</surname>
+                </editor>
+            </titleStmt>
+            <extent type="Tokens">NA</extent>
+            <publicationStmt>
+                <pubPlace>NA</pubPlace>
+                <publisher>NA</publisher>
+                <date when="2013">NA</date>
+                <biblScope>NA</biblScope>
+            </publicationStmt>
+            <seriesStmt>
+                <title>NA</title>
+                <editor>NA</editor>
+                <biblScope unit="volume">NA</biblScope>
+            </seriesStmt>
+            <sourceDesc n="1">
+                <msDesc>
+                    <msIdentifier>
+                        <msName>Cod. XYZ</msName>
+                        <altIdentifier>
+                            <repository>NA</repository>
+                            <collection>NA</collection>
+                            <idno>NA</idno>
+                        </altIdentifier>
+                    </msIdentifier>
+                    <history>
+                        <origin>
+                            <objectType>NA</objectType>
+                            <origDate precision="medium" notAfter-custom="999"
+                                notBefore-custom="1100">NA</origDate>
+                            <origPlace>NA</origPlace>
+                            <title>NA</title>
+                            <locus/>
+                        </origin>
+                    </history>
+                </msDesc>
+                <recordHist>
+                    <source facs="http">
+                        <ref target="http">NA</ref>
+                    </source>
+                </recordHist>
+            </sourceDesc>
+        </fileDesc>
+        <profileDesc>
+            <langUsage>
+                <language ident="NA" style="Language">NA</language>
+                <language ident="NA" style="LanguageArea">NA</language>
+            </langUsage>
+        </profileDesc>
+        <encodingDesc>
+            <schemaSpec ident="AnnotationKey">
+                <elementSpec ident="Meta">
+                    <valList>
+                        <valItem ident="NA" corresp="NA"/>
+                        <valItem ident="NA" corresp="NA"/>
+                    </valList>
+                </elementSpec>
+                <elementSpec ident="Morphological">
+                    <valList>
+                        <valItem ident="NA" corresp="NA"/>
+                        <valItem ident="NA" corresp="NA"/>
+                    </valList>
+                </elementSpec>
+                <elementSpec ident="Syntactical">
+                    <valList>
+                        <valItem ident="NA" corresp="NA"/>
+                        <valItem ident="NA" corresp="NA"/>
+                    </valList>
+                </elementSpec>
+                <elementSpec ident="Lexical">
+                    <valList>
+                        <valItem ident="NA" corresp="NA"/>
+                    </valList>
+                </elementSpec>
+                <elementSpec ident="Transcription">
+                    <valList>
+                        <valItem ident="NA" corresp="NA"/>
+                        <valItem ident="NA" corresp="NA"/>
+                        <valItem ident="NA" corresp="NA"/>
+                    </valList>
+                </elementSpec>
+            </schemaSpec>
+        </encodingDesc>
+        <revisionDesc>
+            <change n="1.0" when="2013" who="NA">NA</change>
+        </revisionDesc>
+    </teiHeader>
+    <text/>
+</TEI>

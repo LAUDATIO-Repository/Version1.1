@@ -1,0 +1,3101 @@
+<?php 
+App::uses('AppController', 'Controller', 'Utility', 'Xml');
+
+class XMLObjectsController extends AppController {
+	#var $components = array('Auth','Session','Acl'); #'Session'
+	#var $helpers = array('Form','Session','Html');
+	
+	
+	public function blog() {
+		#require_once("/var/www/repository/wordpress");
+
+	}
+	
+	
+	function beforeFilter() {
+		parent::beforeFilter();
+		#$this->Auth->allow('*');
+		$this->Auth->allow(array('index','view','login','objects','plugin' => 'search'));#'index','view'
+	}
+	
+	public function index() {
+		#$this->set('dump',var_dump($this->data));
+	}
+	
+	public function request() {
+		$this->helpers[] = 'Form';
+		$this->set('form', $this->Form);
+		 
+		# variablen initialisieren
+		if(isset($_POST['showHeader'])){
+			$this->set('showHeader', 'true');
+		}else{
+			$this->set('showHeader', '');
+		}
+		
+		if(isset($_POST['createpid'])){
+			$this->set('createpid',$_POST['createpid'] );
+		}else{
+			$this->set('createpid', '');
+		}
+		
+		if(isset($_POST['createlabel'])){
+			$this->set('createlabel',$_POST['createlabel'] );
+		}else{
+			$this->set('createlabel', '');
+		}
+		
+		if(isset($_POST['openpid'])){
+			$this->set('openpid',$_POST['openpid'] );
+		}else{
+			$this->set('openpid', '');
+		}
+		
+		
+		$this->set('response',' ');				
+		//URL für den Aufruf setzen
+		
+		
+		# methode feststellen + request aussführen
+		if(!isset($_POST['method'])){
+			if(isset($_FILES['userfile'])){
+				$this->set('response', $this->XMLObject->postFedora($_FILES['userfile']));
+			}else{
+				$this->set('response','chose file to ingest');
+			}
+			var_dump($_POST);
+			return false;
+		}	
+		
+		//Die Parameter fÃ¼r die jeweilige Methode setzen
+		switch($_POST['method'])
+		{
+			case 'GET':		
+				$this->set('response', $this->XMLObject->getFedora($_POST['openpid']));
+				break;
+			case 'POST':
+				break;
+			case 'DELETE': 
+				$this->set('response', 'delete object');
+				break;		
+			case 'PUT': 
+				$this->set('response', 'update object');
+				break;
+			default: $this->set('response','Kein gÃ¼ltige HTTP-Methode fÃ¼r den Aufruf angegeben!');
+			
+		}
+		var_dump($_POST);
+	}
+	
+	
+	public function view() {
+	$xml_answer = $this->XMLObject->showAllObjectsXML();
+	$htmloutput = explode("\n", $xml_answer);
+	$this->set('xmloutput', htmlentities($xml_answer));
+	$this->set('htmloutput', $htmloutput);
+	
+<<<<<<< HEAD
+	#$getObjectVersion = $this->XMLObject->getObjectVersion($pid);
+	#$this->set('getObjectVersionXml', htmlentities($getObjectVersion));
+	
+	#$this->set('datastream_xml', htmlentities($listDatastream_xml));
+	
+	#$listDatastream = $this->XMLObject->listDatastream();
+	#$datastream_output = explode("\n", $listDatastream);
+	#$this->set('listDatastream', htmlentities($listDatastream));
+	#$this->set('datastream_output', $datastream_output);
+	
+		#$xmlObject = $this->XMLObject->getAllFromFedora();
+		#$this->set(array('xmlObject' => $xmlObject,
+		#	'_serialize' => array('xmlObject')
+		#));
+	
+	}
+
+	public function objects($value,$version = null) { //$date=null,$date2=null
+		App::uses('Xml','Utility');
+        if(!$permission = $this->permission($value)){
+            $this->Session->setFlash(__('No permission to view Corpus.'));
+            $this->redirect(array('action' => 'view'));
+        }
+        //set url to first version
+        if($version == null){
+            $version = $this->XMLObject->getFirstTeiVersion($value);
+            $this->redirect(array('controller' => 'XMLObjects','action'=>'objects',$value,$version));
+        }
+        //reveal Document if set by search link
+        if(isset($_POST['reveal'])){
+            $this->set('reveal',$_POST['reveal']);
+        }
+        $date = substr($version,strrpos($version,'_')+1);
+        $version = substr($version,0,strrpos($version,'_'));
+        $scheme = substr($version,strrpos($version,'_')+1);
+        /*var_dump($version);
+        var_dump($date);
+        var_dump($scheme);*/
+        $result_array = $this->XMLObject->getObjectTEIXmlVersion($value,$version,$date);
+
+        #Error handling
+        if($result_array['http_code'] != '200'){
+            if($result_array['http_code'] == '401'){
+                $this->Session->setFlash(__('Access denied, Object state may be inactive'));
+            }else{
+                if($result_array['http_code'] == '404'){
+                    $msgdate = '';
+                    if($version) $msgdate = ' Version: '.$version;
+                    $this->Session->setFlash('No TEI_Header available for object '. urldecode($value) .$msgdate);
+                }else{
+                    $this->Session->setFlash('Error Code:'.$result_array['http_code']);
+                }
+            }
+           $this->redirect($this->referer());
+        }
+        #set view variables
+        $xmlObject = Xml::build($result_array['response']);// Here will throw a Exception
+        if(isset($xmlObject->teiHeader)){
+            if($scheme == 'Schema1'){
+                XMLObjectsController::objectsSchema1($xmlObject,$value);
+            }elseif($scheme == 'Schema2'){
+                XMLObjectsController::objectsSchema2($xmlObject,$value);
+            }
+        //no TEI Header set
+        }else{
+            #print_r($xmlObject);
+            $this->Session->setFlash('No TEI-Header available for Object '.$value);
+            //$this->set('noTEI',true);
+            $this->set('pid', $value);
+            $this->set('title', $xmlObject->objLabel);
+            $this->set('editor', $xmlObject->objOwnerId);
+            $this->set('extent', '');
+            $this->set('publDate', ''); #$xmlObject->objModels->ObjCreateDate
+            $this->set('status', $xmlObject->objState);
+        }
+        $versions = $this->XMLObject->getTeiVersions($value);
+        //var_dump($versions);
+        $this->set('versions',$versions);
+        $this->set('thisVersion',$version.'_'.$date);
+        $this->set('handlePID',$this->XMLObject->getHandlePID($value,$version.'_'.$date));
+        $this->render("/XMLObjects/objects_".strtolower($scheme));
+	}
+
+    private function objectsSchema1($xmlObject,$value){
+        $download_format = array();
+        $version_format = array();
+        $label_format = array();
+
+        $encodingDesc_array = array();
+
+        $segmentation_array = array();
+        $normalization_array = array();
+        #$namespace_array = array();
+
+        $register_array = array();
+        $short_array = array();
+
+        $namespace_tei_array = array();
+        $namespace_exb_array = array();
+        $namespace_relANNIS_array = array();
+        $namespace_xml_array = array();
+
+        $editor_forename_array = array();
+        $editor_surname_array = array();
+        $editor_department_name_array = array();
+        $editor_institution_name_array = array();
+
+        $author_forename_array = array();
+        $author_surname_array = array();
+        $author_department_name_array = array();
+        $author_institution_name_array = array();
+
+        $items_array = array();
+        $item_title_array = array();
+
+        $item_surname_array = array();
+        $item_forename_array = array();
+        $editor_forename_doc_array = array();
+        $editor_surname_doc_array = array();
+
+        $item_publDate_array = array();
+        $item_biblScope_array = array();
+        $item_publisher_array = array();
+        $item_pubPlace_array = array();
+        $item_extent_array = array();
+
+        $item_series_array = array();
+        $item_revision_array = array();
+
+        $date_revision_array = array();
+        $type_revision_array = array();
+        $who_revision_array = array();
+        $date_revision_array = array();
+
+        $valItem_array = array();
+        $annotItem_array = array();
+
+        #$attrib_tagUsage_array = array();
+        $item_tagUsage_array = array();
+        $item_lang_tagUsage_array = array();
+
+        //@PrepStep
+        $prep_editor_forename_array = array();
+        $prep_editor_surname_array = array();
+        $prep_editor_department_name_array = array();
+        $prep_editor_institution_name_array = array();
+
+        $prep_author_forename_array = array();
+        $prep_author_surname_array = array();
+        $prep_author_department_name_array = array();
+        $prep_author_institution_name_array = array();
+
+        $prep_encodingDesc_array = array();
+        $post_encodingDesc_array = array();
+
+        $appInfo_array = array();
+
+        $appInfo_trans_array = array();
+        $appInfo_style_array = array();
+
+        $appInfo_markup_style_array= array();
+
+
+        $appInfo_markup_array = array();
+        $appInfo_tok_array = array();
+        $appInfo_mapping_array = array();
+
+        //180213
+        $appInfo_tok_style_array = array();
+        $prep_tok_application_subtype_array = array();
+        $prep_tok_application_array = array();
+        $prep_tok_app_label_array = array();
+
+        //more and more
+        $appInfo_mapping_style_array = array();
+        $prep_mapping_application_subtype_array = array();
+        $prep_mapping_application_array = array();
+        $prep_mapping_app_label_array = array();
+
+        $prep_application_array = array();
+        $prep_application_subtype_array = array();
+
+        $prep_app_label_array =array();
+
+        $prep_pos_encodingDesc_array = array();
+
+        $layer_title_array = array();
+
+        $prep_segmentation_array = array();
+        $prep_normalization_array = array();
+        $prep_normalization_desc_array = array();
+        $prep_segmentation_desc_array = array();
+
+        $appInfo_ann_array = array();
+        $appInfo_ann_style_array = array();
+        $prep_ann_application_subtype_array = array();
+        $prep_ann_application_array = array();
+        $prep_application_ann_type_array = array();
+        $prep_ann_app_label_array = array();
+
+        $prep_ann_change_when_array = array();
+        $prep_ann_change_who_array = array();
+        $prep_ann_change_desc_array = array();
+
+        $prep_tok_change_when_array = array();
+        $prep_tok_change_who_array = array();
+        $prep_tok_change_desc_array = array();
+
+        $prep_application_type_array = array();
+        $prep_application_markup_type_array = array();
+        $prep_application_tok_type_array = array();
+        $prep_application_mapping_type_array = array();
+        $prep_markup_application_subtype_array = array();
+        $prep_markup_application_array = array();
+        $prep_markup_app_label_array = array();
+
+        $correction_method_array = array();
+        $correction_status_array = array();
+        $prep_correction_desc_array = array();
+        #Corpus
+        $this->set('pid', $value);
+        $this->set('title', $xmlObject->teiHeader->fileDesc->titleStmt->title);
+        $this->set('authority', $xmlObject->teiHeader->fileDesc->publicationStmt->authority);
+        $this->set('av_status', $xmlObject->teiHeader->fileDesc->publicationStmt->availability);
+        $this->set('project', $xmlObject->teiHeader->fileDesc->publicationStmt->availability->p);
+        #var_dump($xmlObject->teiHeader->fileDesc->publicationStmt->availability);
+        $this->set('corpusrelease', $xmlObject->teiHeader->fileDesc->publicationStmt->date['when']);
+        $this->set('editor', $xmlObject->teiHeader->fileDesc->titleStmt->editor);
+        if ((isset($xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->sourceDesc->p->ref['target'])) && ($xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->sourceDesc->p->ref['target'] != "N/A")) {
+            $this->set('homepage', $xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->sourceDesc->p->ref['target']);
+        }
+        elseif (isset($xmlObject->teiHeader->encodingDesc[1]->projectDesc->p->ref['target'])) {
+            $this->set('homepage', $xmlObject->teiHeader->encodingDesc[1]->projectDesc->p->ref['target']);
+        }
+        elseif (isset($xmlObject->teiHeader->encodingDesc[0]->projectDesc->p->ref['target'])) {
+            $this->set('homepage', $xmlObject->teiHeader->encodingDesc[0]->projectDesc->p->ref['target']);
+        }
+
+        #var_dump($xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->sourceDesc->p->ref['target']);
+
+        #var_dump($xmlObject->teiHeader->profileDesc->langUsage->language);
+        $this->set('language', $xmlObject->teiHeader->profileDesc->langUsage->language);
+
+        if (isset($xmlObject->teiHeader->encodingDesc[1]->projectDesc)) {
+            $this->set('description', $xmlObject->teiHeader->encodingDesc[1]->projectDesc);
+        }
+        elseif (isset($xmlObject->teiHeader->encodingDesc[0]->projectDesc)) {
+            $this->set('description', $xmlObject->teiHeader->encodingDesc[0]->projectDesc);
+        }
+
+        for($x=0;$x<sizeof($xmlObject->teiHeader->fileDesc->titleStmt->editor);$x++) {
+            if (isset($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->persname->forename)) {
+                foreach ($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->persname->forename as $editor_forename) {
+                    array_push($editor_forename_array, $editor_forename);
+                    $this->set('editor_forename_array', $editor_forename_array);
+                }
+            }
+            if (isset($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->persname->surname)) {
+                foreach ($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->persname->surname as $editor_surname) {
+                    array_push($editor_surname_array, $editor_surname);
+                    $this->set('editor_surname_array', $editor_surname_array);
+                }
+            }
+            if (isset($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->affiliation)) {
+                for ($q=0;$q<sizeof($xmlObject->teiHeader->fileDesc->titleStmt->editor->affiliation->orgName);$q++) {
+                    #foreach ($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q]->attributes() as $attrib => $editor_orgname) {
+                    #var_dump($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q]);
+
+                    if ($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q]->attributes() == 'Department') {
+                        $editor_department_name = $xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q];
+
+                        array_push($editor_department_name_array, $editor_department_name);
+                        $this->set('editor_department_name_array', $editor_department_name_array);
+                    }
+                    elseif ($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q]->attributes() == 'Institution') {
+                        $editor_institution_name = $xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q];
+
+                        array_push($editor_institution_name_array, $editor_institution_name);
+                        $this->set('editor_institution_name_array', $editor_institution_name_array);
+                    }
+
+                    foreach ($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q] as $editor_orgname) {
+                        array_push($editor_orgname_array, $editor_orgname);
+                        $this->set('editor_orgname_array', $editor_orgname_array);
+                    }
+
+                }
+            }
+        }
+
+        for($y=0;$y<sizeof($xmlObject->teiHeader->fileDesc->titleStmt->author);$y++) {
+            if (isset($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->persName->forename)) {
+                foreach ($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->persName->forename as $author_forename) {
+                    array_push($author_forename_array, $author_forename);
+                    $this->set('author_forename_array', $author_forename_array);
+                }
+            }
+            if (isset($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->persName->surname)) {
+                foreach ($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->persName->surname as $author_surname) {
+                    array_push($author_surname_array, $author_surname);
+                    $this->set('author_surname_array', $author_surname_array);
+                }
+            }
+            if (isset($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation)) {
+                for ($q=0;$q<sizeof($xmlObject->teiHeader->fileDesc->titleStmt->author->affiliation->orgName);$q++) {
+                    if ($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q]->attributes() == 'Department') {
+                        $author_department_name = $xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q];
+
+                        array_push($author_department_name_array, $author_department_name);
+                        $this->set('author_department_name_array', $author_department_name_array);
+                    }
+                    elseif ($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q]->attributes() == 'Institution') {
+                        $author_institution_name = $xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q];
+
+                        array_push($author_institution_name_array, $author_institution_name);
+                        $this->set('author_institution_name_array', $author_institution_name_array);
+                    }
+
+                    foreach ($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q] as $author_orgname) {
+                        array_push($author_orgname_array, $author_orgname);
+                        $this->set('author_orgname_array', $author_orgname_array);
+                    }
+                }
+            }
+        }
+
+        $this->set('version', $xmlObject->teiHeader->revisionDesc->change["n"]);
+        $this->set('extent', $xmlObject->teiHeader->fileDesc->extent["n"]);
+        $this->set('publDate', $xmlObject->teiHeader->fileDesc->publicationStmt->date ["when"]);
+        $this->set('status', $xmlObject->teiHeader->fileDesc->publicationStmt->availability->p);
+
+        #SubCorpus
+        $this->set('item', $xmlObject->teiCorpus->teiHeader->teiHeader);
+
+        #var_dump($xmlObject->teiCorpus->teiHeader->teiHeader[0]->fileDesc);
+
+        //item "corresp"
+        if (isset($xmlObject->teiHeader->fileDesc->sourceDesc->list)) {
+            foreach ($xmlObject->teiHeader->fileDesc->sourceDesc->list->item as $item_title) {
+                array_push($item_title_array, $item_title["corresp"]);
+                $this->set('item_title_array', $item_title_array);
+            }
+        }
+
+        for($a=0;$a<sizeof($xmlObject->teiCorpus->teiHeader->teiHeader);$a++) {
+            foreach ($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->fileDesc->attributes('xml', TRUE) as $short) {
+                array_push($short_array, $short);
+                $this->set('short_array', $short_array);
+            }
+
+            foreach ($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->attributes() as $attrib => $style) {
+                if ($attrib == 'style') {
+                    array_push($register_array, $style);
+                    $this->set('register_array', $register_array);
+                }
+            }
+
+            foreach ($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->fileDesc->titleStmt->title as $item) {
+                array_push($items_array, $item);
+                $this->set('items_array', $items_array);
+            }
+
+            if (isset($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->fileDesc->titleStmt->author->forename)) {
+                foreach ($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->fileDesc->titleStmt->author->forename as $item_forename) {
+                    array_push($item_forename_array, $item_forename);
+                    $this->set('item_forename_array', $item_forename_array);
+                }
+            }
+
+            if (isset($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->fileDesc->titleStmt->author->surname)) {
+                foreach ($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->fileDesc->titleStmt->author->surname as $item_surname) {
+                    array_push($item_surname_array, $item_surname);
+                    $this->set('item_surname_array', $item_surname_array);
+                }
+            }
+
+
+            if (isset($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->fileDesc->titleStmt->editor->forename)) {
+                foreach ($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->fileDesc->titleStmt->editor->forename as $editor_forename_doc) {
+                    array_push($editor_forename_doc_array, $editor_forename_doc);
+                    $this->set('editor_forename_doc_array', $editor_forename_doc_array);
+                }
+            }
+
+            if (isset($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->fileDesc->titleStmt->editor->surname)) {
+                foreach ($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->fileDesc->titleStmt->editor->surname as $editor_surname_doc) {
+                    array_push($editor_surname_doc_array, $editor_surname_doc);
+                    $this->set('editor_surname_doc_array', $editor_surname_doc_array);
+                }
+            }
+
+            #publisher
+            if (isset($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->fileDesc->publicationStmt->publisher)) {
+                foreach ($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->fileDesc->publicationStmt->publisher as $item_publisher) {
+                    array_push($item_publisher_array, $item_publisher);
+                    $this->set('item_publisher_array', $item_publisher_array);
+                }
+            }
+
+            if (isset($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->fileDesc->publicationStmt->pubPlace)) {
+                foreach ($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->fileDesc->publicationStmt->pubPlace as $item_pubPlace) {
+                    array_push($item_pubPlace_array, $item_pubPlace);
+                    $this->set('item_pubPlace_array', $item_pubPlace_array);
+                }
+            }
+
+            if (isset($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->fileDesc->publicationStmt->date)) {
+                foreach ($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->fileDesc->publicationStmt->date as $item_publDate) {
+                    array_push($item_publDate_array, $item_publDate);
+                    $this->set('item_publDate_array', $item_publDate_array);
+                }
+            }
+
+            if (isset($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->fileDesc->publicationStmt->biblScope)) {
+                foreach ($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->fileDesc->publicationStmt->biblScope as $item_biblScope) {
+                    array_push($item_biblScope_array, $item_biblScope);
+                    $this->set('item_biblScope_array', $item_biblScope_array);
+                }
+            }
+
+            if (isset($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->fileDesc->extent)) {
+                foreach ($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->fileDesc->extent as $item_extent) {
+                    array_push($item_extent_array, $item_extent);
+                    $this->set('item_extent_array', $item_extent_array);
+                }
+            }
+
+            if (isset($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->fileDesc->seriesStmt->title)) {
+                foreach ($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->fileDesc->seriesStmt->title as $item_series) {
+                    array_push($item_series_array, $item_series);
+                    $this->set('item_series_array', $item_series_array);
+                }
+            }
+
+            #var_dump($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->revisionDesc->change->attributes());
+
+            if (isset($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->revisionDesc)) {
+                foreach ($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->revisionDesc->change->attributes() as $attrib => $item_revision) {
+                    #var_dump($attrib);
+                    if ($attrib == 'type') {
+                        array_push($type_revision_array, $item_revision);
+                        $this->set('type_revision_array', $type_revision_array);
+                    }
+                    elseif ($attrib == 'when') {
+                        array_push($date_revision_array, $item_revision);
+                        $this->set('date_revision_array', $date_revision_array);
+                    }
+                    elseif ($attrib == 'who') {
+                        array_push($who_revision_array, $item_revision);
+                        $this->set('who_revision_array', $who_revision_array);
+                    }
+                }
+
+                foreach ($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->revisionDesc->change as $item_revision) {
+                    #var_dump($item_revision);
+                    array_push($item_revision_array, $item_revision);
+                    $this->set('item_revision_array', $item_revision_array);
+                }
+            }
+
+            if ($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->encodingDesc->schemaSpec->elementSpec->attributes() == 'transcription') {
+                foreach ($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->encodingDesc->schemaSpec->elementSpec->valList as $valItem) {
+                    array_push($valItem_array, $valItem);
+                    #natcasesort($valItem_array);
+                    $this->set('valItem_array', $valItem_array);
+                }
+            }
+
+            if ($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->encodingDesc->schemaSpec->elementSpec[1]->attributes() == 'annotation') {
+                #echo "bam";
+                foreach ($xmlObject->teiCorpus->teiHeader->teiHeader[$a]->encodingDesc->schemaSpec->elementSpec[1]->valList as $annotItem) {
+                    #var_dump($annotItem["corresp"]);
+                    #echo "<br>";
+                    array_push($annotItem_array, $annotItem);
+                    $this->set('annotItem_array', $annotItem_array);
+                }
+            }
+        }
+
+        #Format(e)
+        for($i=0;$i<sizeof($xmlObject->teiHeader->encodingDesc);$i++) {
+            #array_push($encodingDesc_array, $xmlObject->teiHeader->encodingDesc[$i]);
+            #$this->set('encodingDesc_array', $encodingDesc_array);
+
+            #var_dump($encodingDesc_array);
+
+            #if ($xmlObject->teiHeader->encodingDesc[$i]->appInfo->application->attributes()) {
+            if ($xmlObject->teiHeader->encodingDesc[$i]) {
+                foreach ($xmlObject->teiHeader->encodingDesc[$i]->editorialDecl->segmentation->p as $segmentation) {
+                    array_push($segmentation_array, $segmentation);
+                    $this->set('segmentation_array', $segmentation_array);
+                }
+
+                foreach ($xmlObject->teiHeader->encodingDesc[$i]->editorialDecl->normalization->p as $normalization) {
+                    array_push($normalization_array, $normalization);
+                    $this->set('normalization_array', $normalization_array);
+                }
+
+                foreach ($xmlObject->teiHeader->encodingDesc[0]->tagsDecl->namespace as $namespace) {
+                    array_push($namespace_tei_array, $namespace["name"]);
+                    $this->set('namespace_tei_array', $namespace_tei_array);
+                }
+
+                if (isset($xmlObject->teiHeader->encodingDesc[1]->tagsDecl->namespace)) {
+                    foreach ($xmlObject->teiHeader->encodingDesc[1]->tagsDecl->namespace as $namespace) {
+                        array_push($namespace_exb_array, $namespace["name"]);
+                        $this->set('namespace_exb_array', $namespace_exb_array);
+                    }
+                }
+
+                #var_dump($xmlObject->teiHeader->encodingDesc[2]->tagsDecl->namespace);
+
+                if (isset($xmlObject->teiHeader->encodingDesc[$i]->tagsDecl->namespace)) {
+                    foreach ($xmlObject->teiHeader->encodingDesc[$i]->tagsDecl->namespace as $namespace) {
+                        #var_dump($namespace);
+
+                        array_push($namespace_xml_array, $namespace["name"]);
+                        $this->set('namespace_xml_array', $namespace_xml_array);
+
+                        array_push($namespace_relANNIS_array, $namespace["name"]);
+                        $this->set('namespace_relANNIS_array', $namespace_relANNIS_array);
+
+                        if ($namespace["name"] == 'tok') {
+                            $this->set('tok_text', $xmlObject->teiHeader->encodingDesc[2]->tagsDecl->namespace->tagUsage);
+                        }
+                        elseif ($namespace["name"] == 'clean') {
+                            $this->set('clean_text', $xmlObject->teiHeader->encodingDesc[2]->tagsDecl->namespace[1]->tagUsage);
+                        }
+                        elseif ($namespace["name"] == 'norm') {
+                            if (isset($xmlObject->teiHeader->encodingDesc[2]->tagsDecl->namespace[2]->tagUsage)) {
+                                $this->set('norm_text', $xmlObject->teiHeader->encodingDesc[2]->tagsDecl->namespace[2]->tagUsage);
+                            }
+                        }
+                    }
+                }
+
+                foreach ($xmlObject->teiHeader->encodingDesc[$i]->appInfo->application->attributes() as $attrib => $format) {
+                    if ($attrib == 'ident') {
+                        array_push($download_format, $format);
+                        $this->set('download_format', $download_format);
+                    }
+                    else {
+                        array_push($version_format, $format);
+                        $this->set('version_format', $version_format);
+                    }
+                }
+
+                foreach ($xmlObject->teiHeader->encodingDesc[$i]->appInfo->application->label as $format) {
+                    array_push($label_format, $format);
+                    $this->set('label_format', $label_format);
+                }
+            }
+        }
+
+        if (isset($xmlObject->teiHeader->encodingDesc[2]->tagsDecl->namespace)) {
+            //work in progress, 130213
+            foreach ($xmlObject->teiHeader->encodingDesc[2]->tagsDecl->namespace as $pos_annotation) {
+                if ($pos_annotation ["name"] == 'pos') {
+                    foreach ($xmlObject->teiHeader->encodingDesc[2]->tagsDecl->namespace[3]->tagUsage as $item_tagUsage) {
+                        array_push($item_tagUsage_array, $item_tagUsage);
+                        $this->set('item_tagUsage_array', $item_tagUsage_array);
+                    }
+                }
+
+                if ($pos_annotation ["name"] == 'foreign') {
+                    $this->set('foreign_text', $xmlObject->teiHeader->encodingDesc[2]->tagsDecl->namespace[6]->tagUsage);
+                }
+
+                if ($pos_annotation ["name"] == 'lang') {
+                    foreach ($xmlObject->teiHeader->encodingDesc[2]->tagsDecl->namespace[7]->tagUsage as $item_lang_tagUsage) {
+                        array_push($item_lang_tagUsage_array, $item_lang_tagUsage);
+                        $this->set('item_lang_tagUsage_array', $item_lang_tagUsage_array);
+                    }
+                }
+
+                if ($pos_annotation ["name"] == 'hi') {
+                    $this->set('hi_text', $xmlObject->teiHeader->encodingDesc[2]->tagsDecl->namespace[37]->tagUsage);
+                }
+            }
+        }
+        //---------------------------
+
+        //if (titleStmt corresp="pos") {
+
+        //PreparationStep
+
+
+
+
+        //encoding
+        /*
+                        for($q=0;$q<sizeof($xmlObject->teiCorpus->teiCorpus->teiHeader[0]->encodingDesc);$q++) {
+                            foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[0]->encodingDesc[$q] as $encodingDesc) {
+                                var_dump($encodingDesc);
+                                array_push($prep_pos_encodingDesc_array, $encodingDesc["encodingStep"]);
+                                $this->set('prep_pos_encodingDesc_array', $prep_pos_encodingDesc_array);
+                            }
+                        }
+        */
+
+        ###010313###
+        ###var_dump($xmlObject->teiCorpus->teiHeader->teiCorpus->teiHeader);
+
+        for($g=0;$g<sizeof($xmlObject->teiCorpus->teiCorpus->teiHeader);$g++) {
+            foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->title as $layer_title) {
+                #foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g] as $teiHeader) {
+                #var_dump($teiHeader->titleStmt->title);
+                #echo $layer_title."<br>";
+
+                #var_dump($layer_title);
+
+                array_push($layer_title_array, $layer_title);
+                $this->set('layer_title_array', $layer_title_array);
+            }
+
+            for($x=0;$x<sizeof($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor);$x++) {
+                if (isset($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->persname->forename)) {
+                    foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->persname->forename as $prep_editor_forename) {
+                        array_push($prep_editor_forename_array, $prep_editor_forename);
+                        $this->set('prep_editor_forename_array', $prep_editor_forename_array);
+                    }
+                }
+                if (isset($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->persname->surname)) {
+                    foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->persname->surname as $prep_editor_surname) {
+                        array_push($prep_editor_surname_array, $prep_editor_surname);
+                        $this->set('prep_editor_surname_array', $prep_editor_surname_array);
+                    }
+                }
+                if (isset($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->affiliation)) {
+                    for ($q=0;$q<sizeof($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor->affiliation->orgName);$q++) {
+                        if ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q]->attributes() == 'Department') {
+                            $prep_editor_department_name = $xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q];
+
+                            array_push($prep_editor_department_name_array, $prep_editor_department_name);
+                            $this->set('prep_editor_department_name_array', $prep_editor_department_name_array);
+                        }
+                        elseif ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q]->attributes() == 'Institution') {
+                            $prep_editor_institution_name = $xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q];
+
+                            array_push($prep_editor_institution_name_array, $prep_editor_institution_name);
+                            $this->set('prep_editor_institution_name_array', $prep_editor_institution_name_array);
+                        }
+
+                        foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q] as $prep_editor_orgname) {
+                            array_push($prep_editor_orgname_array, $prep_editor_orgname);
+                            $this->set('prep_editor_orgname_array', $prep_editor_orgname_array);
+                        }
+
+                    }
+                }
+            }
+
+            for($y=0;$y<sizeof($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author);$y++) {
+                if (isset($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author[$y]->persName->forename)) {
+                    foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author[$y]->persName->forename as $prep_author_forename) {
+                        array_push($prep_author_forename_array, $prep_author_forename);
+                        $this->set('prep_author_forename_array', $prep_author_forename_array);
+                    }
+                }
+                if (isset($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author[$y]->persName->surname)) {
+                    foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author[$y]->persName->surname as $prep_author_surname) {
+                        array_push($prep_author_surname_array, $prep_author_surname);
+                        $this->set('prep_author_surname_array', $prep_author_surname_array);
+                    }
+                }
+                if (isset($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author[$y]->affiliation)) {
+                    for ($q=0;$q<sizeof($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author->affiliation->orgName);$q++) {
+                        if ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q]->attributes() == 'Department') {
+                            $prep_author_department_name = $xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q];
+
+                            array_push($prep_author_department_name_array, $prep_author_department_name);
+                            $this->set('prep_author_department_name_array', $prep_author_department_name_array);
+                        }
+                        elseif ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q]->attributes() == 'Institution') {
+                            $prep_author_institution_name = $xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q];
+
+                            array_push($prep_author_institution_name_array, $prep_author_institution_name);
+                            $this->set('prep_author_institution_name_array', $prep_author_institution_name_array);
+                        }
+
+                        foreach ($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q] as $prep_author_orgname) {
+                            array_push($prep_author_orgname_array, $prep_author_orgname);
+                            $this->set('prep_author_orgname_array', $prep_author_orgname_array);
+                        }
+                    }
+                }
+            }
+            #}
+
+
+            //-----------------
+            for($q=0;$q<sizeof($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc);$q++) {
+                foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc[$q]->attributes() as $attrib_encoding => $encodingDesc) {
+                    #var_dump($attrib_encoding);
+
+                    array_push($prep_encodingDesc_array, $encodingDesc);
+                    $this->set('prep_encodingDesc_array', $prep_encodingDesc_array);
+
+                    foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc[$q]->appInfo as $attrib => $appInfo) {
+                        if (($encodingDesc == 'Annotation') || ($encodingDesc == 'TokenAnnotation')) {
+                            #var_dump($appInfo["n"]);
+                            array_push($appInfo_ann_array, $appInfo["n"]);
+                            $this->set('appInfo_ann_array', $appInfo_ann_array);
+
+                            array_push($appInfo_ann_style_array, $appInfo["style"]);
+                            $this->set('appInfo_ann_style_array', $appInfo_ann_style_array);
+
+                            for($r=0;$r<sizeof($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc[$q]->appInfo);$r++) {
+                                foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc[$q]->appInfo[$r]->application as $attrib => $ann_application) {
+                                    array_push($prep_ann_application_subtype_array, $ann_application["subtype"]);
+                                    $this->set('prep_ann_application_subtype_array', $prep_ann_application_subtype_array);
+
+                                    array_push($prep_ann_application_array, $ann_application["style"]);
+                                    $this->set('prep_ann_application_array', $prep_ann_application_array);
+
+                                    array_push($prep_application_ann_type_array, $ann_application["type"]);
+                                    $this->set('prep_application_ann_type_array', $prep_application_ann_type_array);
+
+                                    foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc[$q]->appInfo[$r]->application->label as $prep_ann_app_label) {
+                                        array_push($prep_ann_app_label_array, $prep_ann_app_label);
+                                        $this->set('prep_ann_app_label_array', $prep_ann_app_label_array);
+                                    }
+                                }
+
+                                foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->revisionDesc->change as $attrib => $ann_change) {
+                                    #var_dump($ann_change);
+                                    array_push($prep_ann_change_when_array, $ann_change["when"]);
+                                    $this->set('prep_ann_change_when_array', $prep_ann_change_when_array);
+
+                                    array_push($prep_ann_change_who_array, $ann_change["who"]);
+                                    $this->set('prep_ann_change_who_array', $prep_ann_change_who_array);
+
+                                    array_push($prep_ann_change_desc_array, $ann_change);
+                                    $this->set('prep_ann_change_desc_array', $prep_ann_change_desc_array);
+                                }
+                            }
+                        }
+
+                        if ($encodingDesc == 'Transcription') {
+                            #var_dump($appInfo["n"]);
+                            array_push($appInfo_trans_array, $appInfo["n"]);
+                            $this->set('appInfo_trans_array', $appInfo_trans_array);
+
+                            array_push($appInfo_style_array, $appInfo["style"]);
+                            $this->set('appInfo_style_array', $appInfo_style_array);
+
+                            for($r=0;$r<sizeof($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc[$q]->appInfo);$r++) {
+                                foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc[$q]->appInfo[$r]->application as $attrib => $application) {
+                                    array_push($prep_application_subtype_array, $application["subtype"]);
+                                    $this->set('prep_application_subtype_array', $prep_application_subtype_array);
+
+                                    array_push($prep_application_array, $application["style"]);
+                                    $this->set('prep_application_array', $prep_application_array);
+
+                                    array_push($prep_application_type_array, $application["type"]);
+                                    $this->set('prep_application_type_array', $prep_application_type_array);
+
+                                    foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc[$q]->appInfo[$r]->application->label as $prep_app_label) {
+                                        array_push($prep_app_label_array, $prep_app_label);
+                                        $this->set('prep_app_label_array', $prep_app_label_array);
+                                    }
+                                }
+                            }
+                        }
+                        if ($encodingDesc == 'Markup in TEI') {
+                            array_push($appInfo_markup_array, $appInfo["n"]);
+                            $this->set('appInfo_markup_array', $appInfo_markup_array);
+
+                            array_push($appInfo_markup_style_array, $appInfo["style"]);
+                            $this->set('appInfo_markup_style_array', $appInfo_markup_style_array);
+
+                            for($r=0;$r<sizeof($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc[$q]->appInfo);$r++) {
+                                foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc[$q]->appInfo[$r]->application as $attrib => $markup_application) {
+                                    array_push($prep_markup_application_subtype_array, $markup_application["subtype"]);
+                                    $this->set('prep_markup_application_subtype_array', $prep_markup_application_subtype_array);
+
+                                    array_push($prep_markup_application_array, $markup_application["style"]);
+                                    $this->set('prep_markup_application_array', $prep_markup_application_array);
+
+                                    array_push($prep_application_markup_type_array, $application["type"]);
+                                    $this->set('prep_application_markup_type_array', $prep_application_markup_type_array);
+
+                                    foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc[$q]->appInfo[$r]->application->label as $prep_markup_app_label) {
+                                        array_push($prep_markup_app_label_array, $prep_markup_app_label);
+                                        $this->set('prep_markup_app_label_array', $prep_markup_app_label_array);
+                                    }
+                                }
+                            }
+                        }
+                        if ($encodingDesc == 'Tokenization') {
+                            array_push($appInfo_tok_array, $appInfo["n"]);
+                            $this->set('appInfo_tok_array', $appInfo_tok_array);
+
+                            array_push($appInfo_tok_style_array, $appInfo["style"]);
+                            $this->set('appInfo_tok_style_array', $appInfo_tok_style_array);
+
+                            for($r=0;$r<sizeof($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc[$q]->appInfo);$r++) {
+                                foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc[$q]->appInfo[$r]->application as $attrib => $tok_application) {
+                                    array_push($prep_tok_application_subtype_array, $tok_application["subtype"]);
+                                    $this->set('prep_tok_application_subtype_array', $prep_tok_application_subtype_array);
+
+                                    array_push($prep_tok_application_array, $tok_application["style"]);
+                                    $this->set('prep_tok_application_array', $prep_tok_application_array);
+
+                                    array_push($prep_application_tok_type_array, $application["type"]);
+                                    $this->set('prep_application_tok_type_array', $prep_application_tok_type_array);
+
+                                    foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc[$q]->appInfo[$r]->application->label as $prep_tok_app_label) {
+                                        array_push($prep_tok_app_label_array, $prep_tok_app_label);
+                                        $this->set('prep_tok_app_label_array', $prep_tok_app_label_array);
+                                    }
+                                }
+                            }
+                        }
+                        if ($encodingDesc == 'Mapping TEI xml mit Treetaggeroutput') {
+                            array_push($appInfo_mapping_array, $appInfo["n"]);
+                            $this->set('appInfo_mapping_array', $appInfo_mapping_array);
+
+                            array_push($appInfo_mapping_style_array, $appInfo["style"]);
+                            $this->set('appInfo_mapping_style_array', $appInfo_mapping_style_array);
+
+                            for($r=0;$r<sizeof($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc[$q]->appInfo);$r++) {
+                                foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc[$q]->appInfo[$r]->application as $attrib => $mapping_application) {
+                                    array_push($prep_mapping_application_subtype_array, $mapping_application["subtype"]);
+                                    $this->set('prep_mapping_application_subtype_array', $prep_mapping_application_subtype_array);
+
+                                    array_push($prep_mapping_application_array, $mapping_application["style"]);
+                                    $this->set('prep_mapping_application_array', $prep_mapping_application_array);
+
+                                    array_push($prep_application_mapping_type_array, $application["type"]);
+                                    $this->set('prep_application_mapping_type_array', $prep_application_mapping_type_array);
+
+                                    foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc[$q]->appInfo[$r]->application->label as $prep_mapping_app_label) {
+                                        array_push($prep_mapping_app_label_array, $prep_mapping_app_label);
+                                        $this->set('prep_mapping_app_label_array', $prep_mapping_app_label_array);
+                                    }
+                                }
+                            }
+                        }
+
+                        #foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[1]->revisionDesc->change as $attrib => $tok_change) {
+                        foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->revisionDesc->change as $attrib => $tok_change) {
+                            #var_dump($tok_change);
+
+                            array_push($prep_tok_change_when_array, $tok_change["when"]);
+                            $this->set('prep_tok_change_when_array', $prep_tok_change_when_array);
+
+                            array_push($prep_tok_change_who_array, $tok_change["who"]);
+                            $this->set('prep_tok_change_who_array', $prep_tok_change_who_array);
+
+                            array_push($prep_tok_change_desc_array, $tok_change);
+                            $this->set('prep_tok_change_desc_array', $prep_tok_change_desc_array);
+                        }
+
+                    }
+
+                    foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc[$q]->editorialDecl->normalization as $attrib => $normalization) {
+                        array_push($prep_normalization_array, $normalization["method"]);
+                        $this->set('prep_normalization_array', $prep_normalization_array);
+                    }
+
+                    foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc[$q]->editorialDecl->normalization->p as $prep_normalization_desc) {
+                        array_push($prep_normalization_desc_array, $prep_normalization_desc);
+                        $this->set('prep_normalization_desc_array', $prep_normalization_desc_array);
+                    }
+
+                    foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc[$q]->editorialDecl->segmentation as $attrib => $segmentation) {
+                        array_push($prep_segmentation_array, $segmentation["style"]);
+                        $this->set('prep_segmentation_array', $prep_segmentation_array);
+                    }
+
+
+                    foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc[$q]->editorialDecl->segmentation->p as $prep_segmentation_desc) {
+                        array_push($prep_segmentation_desc_array, $prep_segmentation_desc);
+                        $this->set('prep_segmentation_desc_array', $prep_segmentation_desc_array);
+                    }
+
+                    foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc[$q]->editorialDecl->correction as $attrib => $correction) {
+                        array_push($correction_method_array, $correction["method"]);
+                        $this->set('correction_method_array', $correction_method_array);
+
+                        array_push($correction_status_array, $correction["status"]);
+                        $this->set('correction_status_array', $correction_status_array);
+                    }
+
+                    foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc[$q]->editorialDecl->correction->p as $prep_correction_desc) {
+                        array_push($prep_correction_desc_array, $prep_correction_desc);
+                        $this->set('prep_correction_desc_array', $prep_correction_desc_array);
+
+
+                    }
+                }
+
+                #foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[1]->revisionDesc as $revisionDesc) {
+                #	var_dump($revisionDesc);
+                #}
+            }
+        }
+
+        if (isset($xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->publicationStmt->date["when"])) {
+            $this->set('prep_release', $xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->publicationStmt->date["when"]);
+        }
+
+        if (isset($xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->publicationStmt->date)) {
+            $this->set('prep_desc', $xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->publicationStmt->date);
+        }
+
+        if (isset($xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->sourceDesc->p->ref["target"])) {
+            $this->set('prep_source_ref', $xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->sourceDesc->p->ref["target"]);
+        }
+
+        if (isset($xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->sourceDesc->p->ref)) {
+            $this->set('prep_source_desc', $xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->sourceDesc->p->ref);
+        }
+    }
+
+    private function objectsSchema2($xmlObject,$value){
+        $download_format = array();
+        $version_format = array();
+        $label_format = array();
+
+        $encodingDesc_array = array();
+
+        $segmentation_array = array();
+        $normalization_array = array();
+        $namespace_array = array();
+
+        $register_array = array();
+        $short_array = array();
+
+        $namespace_tei_array = array();
+        $namespace_exb_array = array();
+        $namespace_relANNIS_array = array();
+        $namespace_xml_array = array();
+        $namespace_xml_rend_array = array();
+
+        $editor_forename_array = array();
+        $editor_surname_array = array();
+        $editor_department_name_array = array();
+        $editor_institution_name_array = array();
+
+        $author_forename_array = array();
+        $author_surname_array = array();
+        $author_department_name_array = array();
+        $author_institution_name_array = array();
+
+        $items_array = array();
+        $item_title_array = array();
+
+        $item_surname_array = array();
+        $item_forename_array = array();
+        $editor_forename_doc_array = array();
+        $editor_surname_doc_array = array();
+
+        $item_publDate_array = array();
+        $item_biblScope_array = array();
+        $item_publisher_array = array();
+        $item_pubPlace_array = array();
+        $item_extent_array = array();
+
+        $item_series_array = array();
+        $item_revision_array = array();
+
+        $date_revision_array = array();
+        $type_revision_array = array();
+        $who_revision_array = array();
+        $date_revision_array = array();
+
+        $valItem_array = array();
+        $annotItem_array = array();
+
+        #$attrib_tagUsage_array = array();
+        $item_tagUsage_array = array();
+        $item_lang_tagUsage_array = array();
+
+        //@PrepStep
+        $prep_editor_forename_array = array();
+        $prep_editor_surname_array = array();
+        $prep_editor_department_name_array = array();
+        $prep_editor_institution_name_array = array();
+
+        $prep_author_forename_array = array();
+        $prep_author_surname_array = array();
+        $prep_author_department_name_array = array();
+        $prep_author_institution_name_array = array();
+
+        $prep_encodingDesc_array = array();
+        $prep_encodingDesc_n_array = array();
+        $post_encodingDesc_array = array();
+
+        $appInfo_array = array();
+
+        $appInfo_trans_array = array();
+        $appInfo_style_array = array();
+
+        $appInfo_markup_style_array= array();
+
+
+        $appInfo_markup_array = array();
+        $appInfo_tok_array = array();
+        $appInfo_mapping_array = array();
+
+        //180213
+        $appInfo_tok_style_array = array();
+        $prep_tok_application_subtype_array = array();
+        $prep_tok_application_array = array();
+        $prep_tok_app_label_array = array();
+
+        //more and more
+        $appInfo_mapping_style_array = array();
+        $prep_mapping_application_subtype_array = array();
+        $prep_mapping_application_array = array();
+        $prep_mapping_app_label_array = array();
+
+        $prep_application_array = array();
+        $prep_application_subtype_array = array();
+
+        $prep_app_label_array =array();
+
+        $prep_pos_encodingDesc_array = array();
+
+        $layer_title_array = array();
+
+        $prep_segmentation_array = array();
+        $prep_normalization_array = array();
+        $prep_normalization_desc_array = array();
+        $prep_segmentation_desc_array = array();
+
+        $appInfo_ann_array = array();
+        $appInfo_ann_style_array = array();
+        $prep_ann_application_subtype_array = array();
+        $prep_ann_application_array = array();
+        $prep_application_ann_type_array = array();
+        $prep_ann_app_label_array = array();
+
+        $prep_ann_change_when_array = array();
+        $prep_ann_change_who_array = array();
+        $prep_ann_change_desc_array = array();
+
+        $prep_tok_change_when_array = array();
+        $prep_tok_change_who_array = array();
+        $prep_tok_change_desc_array = array();
+
+        $prep_application_type_array = array();
+        $prep_application_markup_type_array = array();
+        $prep_application_tok_type_array = array();
+        $prep_application_mapping_type_array = array();
+        $prep_markup_application_subtype_array = array();
+        $prep_markup_application_array = array();
+        $prep_markup_app_label_array = array();
+
+        $correction_method_array = array();
+        $correction_status_array = array();
+        $prep_correction_desc_array = array();
+
+        $prep_publicationStmt_array = array();
+        $prep_ref_target_array = array();
+        $prep_extent_array = array();
+
+        $q_size_array = array();
+        $preparation_header_array = array();
+
+        $namespace_trans_array = array();
+        $namespace_lexical_array = array();
+        $namespace_graphical_array = array();
+        $namespace_syntactic_array = array();
+        $namespace_other_array = array();
+        $namespace_xml_trans_array = array();
+        $namespace_xml_lexical_array = array();
+        $namespace_xml_graphical_array = array();
+        $namespace_xml_syntactic_array = array();
+        $namespace_xml_other_array = array();
+
+        #Corpus
+        $this->set('pid', $value);
+        $this->set('title', $xmlObject->teiHeader->fileDesc->titleStmt->title);
+        $this->set('authority', $xmlObject->teiHeader->fileDesc->publicationStmt->authority);
+        $this->set('av_status', $xmlObject->teiHeader->fileDesc->publicationStmt->availability);
+        $this->set('project', $xmlObject->teiHeader->fileDesc->publicationStmt->availability->p);
+        $this->set('corpusrelease', $xmlObject->teiHeader->fileDesc->publicationStmt->date['when']);
+        $this->set('editor', $xmlObject->teiHeader->fileDesc->titleStmt->editor);
+
+        if (isset($xmlObject->teiHeader->encodingDesc[0]->projectDesc->p->ref['target'])) {
+            $this->set('homepage', $xmlObject->teiHeader->encodingDesc[0]->projectDesc->p->ref['target']);
+        }
+        /*
+            if ((isset($xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->sourceDesc->p->ref['target'])) && ($xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->sourceDesc->p->ref['target'] != "N/A")) {
+                $this->set('homepage', $xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->sourceDesc->p->ref['target']);
+            }
+            elseif (isset($xmlObject->teiHeader->encodingDesc[1]->projectDesc->p->ref['target'])) {
+                $this->set('homepage', $xmlObject->teiHeader->encodingDesc[1]->projectDesc->p->ref['target']);
+            }
+            elseif (isset($xmlObject->teiHeader->encodingDesc[0]->projectDesc->p->ref['target'])) {
+                $this->set('homepage', $xmlObject->teiHeader->encodingDesc[0]->projectDesc->p->ref['target']);
+            }
+        */
+
+        #var_dump($xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->sourceDesc->p->ref['target']);
+
+        #var_dump($xmlObject->teiHeader->profileDesc->langUsage->language);
+        $this->set('language', $xmlObject->teiHeader->profileDesc->langUsage->language);
+
+        if (isset($xmlObject->teiHeader->encodingDesc[1]->projectDesc)) {
+            $this->set('description', $xmlObject->teiHeader->encodingDesc[1]->projectDesc);
+        }
+        elseif (isset($xmlObject->teiHeader->encodingDesc[0]->projectDesc)) {
+            $this->set('description', $xmlObject->teiHeader->encodingDesc[0]->projectDesc);
+        }
+
+        for($x=0;$x<sizeof($xmlObject->teiHeader->fileDesc->titleStmt->editor);$x++) {
+            if (isset($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->persName->forename)) {
+                foreach ($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->persName->forename as $editor_forename) {
+                    array_push($editor_forename_array, $editor_forename);
+                    $this->set('editor_forename_array', $editor_forename_array);
+                }
+            }
+            if (isset($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->persName->surname)) {
+                foreach ($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->persName->surname as $editor_surname) {
+                    array_push($editor_surname_array, $editor_surname);
+                    $this->set('editor_surname_array', $editor_surname_array);
+                }
+            }
+            if (isset($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->affiliation)) {
+                for ($q=0;$q<sizeof($xmlObject->teiHeader->fileDesc->titleStmt->editor->affiliation->orgName);$q++) {
+                    if ($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q]->attributes() == 'Department') {
+                        $editor_department_name = $xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q];
+
+                        array_push($editor_department_name_array, $editor_department_name);
+                        $this->set('editor_department_name_array', $editor_department_name_array);
+                    }
+                    elseif ($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q]->attributes() == 'Institution') {
+                        $editor_institution_name = $xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q];
+
+                        array_push($editor_institution_name_array, $editor_institution_name);
+                        $this->set('editor_institution_name_array', $editor_institution_name_array);
+                    }
+
+                    foreach ($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q] as $editor_orgname) {
+                        array_push($editor_orgname_array, $editor_orgname);
+                        $this->set('editor_orgname_array', $editor_orgname_array);
+                    }
+
+                }
+            }
+        }
+
+        for($y=0;$y<sizeof($xmlObject->teiHeader->fileDesc->titleStmt->author);$y++) {
+            if (isset($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->persName->forename)) {
+                foreach ($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->persName->forename as $author_forename) {
+                    array_push($author_forename_array, $author_forename);
+                    $this->set('author_forename_array', $author_forename_array);
+                }
+            }
+            if (isset($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->persName->surname)) {
+                foreach ($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->persName->surname as $author_surname) {
+                    array_push($author_surname_array, $author_surname);
+                    $this->set('author_surname_array', $author_surname_array);
+                }
+            }
+            if (isset($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation)) {
+                for ($q=0;$q<sizeof($xmlObject->teiHeader->fileDesc->titleStmt->author->affiliation->orgName);$q++) {
+                    if ($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q]->attributes() == 'Department') {
+                        $author_department_name = $xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q];
+
+                        array_push($author_department_name_array, $author_department_name);
+                        $this->set('author_department_name_array', $author_department_name_array);
+                    }
+                    elseif ($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q]->attributes() == 'Institution') {
+                        $author_institution_name = $xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q];
+
+                        array_push($author_institution_name_array, $author_institution_name);
+                        $this->set('author_institution_name_array', $author_institution_name_array);
+                    }
+
+                    foreach ($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q] as $author_orgname) {
+                        array_push($author_orgname_array, $author_orgname);
+                        $this->set('author_orgname_array', $author_orgname_array);
+                    }
+                }
+            }
+        }
+
+        $this->set('version', $xmlObject->teiHeader->revisionDesc->change["n"]);
+        $this->set('extent', $xmlObject->teiHeader->fileDesc->extent);
+        $this->set('publDate', $xmlObject->teiHeader->fileDesc->publicationStmt->date ["when"]);
+        $this->set('status', $xmlObject->teiHeader->fileDesc->publicationStmt->availability->p);
+
+        #SubCorpus
+        $this->set('item', $xmlObject->teiCorpus->teiHeader->teiHeader);
+
+        //item "corresp"
+        if (isset($xmlObject->teiHeader->fileDesc->sourceDesc->list)) {
+            foreach ($xmlObject->teiHeader->fileDesc->sourceDesc->list->item as $item_title) {
+                array_push($item_title_array, $item_title["corresp"]);
+                $this->set('item_title_array', $item_title_array);
+            }
+        }
+
+        for($a=0;$a<sizeof($xmlObject->teiCorpus->teiHeader);$a++) {
+            foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->attributes('xml', TRUE) as $short) {
+                array_push($short_array, $short);
+                $this->set('short_array', $short_array);
+            }
+
+            foreach ($xmlObject->teiCorpus->teiHeader[$a]->attributes() as $attrib => $style) {
+                if ($attrib == 'style') {
+                    array_push($register_array, $style);
+                    $this->set('register_array', $register_array);
+                }
+            }
+
+            foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->titleStmt->title as $item) {
+                array_push($items_array, $item);
+                $this->set('items_array', $items_array);
+            }
+
+            if (isset($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->titleStmt->author->forename)) {
+                foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->titleStmt->author->forename as $item_forename) {
+                    array_push($item_forename_array, $item_forename);
+                    $this->set('item_forename_array', $item_forename_array);
+                }
+            }
+
+            if (isset($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->titleStmt->author->surname)) {
+                foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->titleStmt->author->surname as $item_surname) {
+                    array_push($item_surname_array, $item_surname);
+                    $this->set('item_surname_array', $item_surname_array);
+                }
+            }
+
+
+            if (isset($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->titleStmt->editor->forename)) {
+                foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->titleStmt->editor->forename as $editor_forename_doc) {
+                    array_push($editor_forename_doc_array, $editor_forename_doc);
+                    $this->set('editor_forename_doc_array', $editor_forename_doc_array);
+                }
+            }
+
+            if (isset($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->titleStmt->editor->surname)) {
+                foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->titleStmt->editor->surname as $editor_surname_doc) {
+                    array_push($editor_surname_doc_array, $editor_surname_doc);
+                    $this->set('editor_surname_doc_array', $editor_surname_doc_array);
+                }
+            }
+
+            #publisher
+            if (isset($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->publicationStmt->publisher)) {
+                foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->publicationStmt->publisher as $item_publisher) {
+                    array_push($item_publisher_array, $item_publisher);
+                    $this->set('item_publisher_array', $item_publisher_array);
+                }
+            }
+
+            if (isset($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->publicationStmt->pubPlace)) {
+                foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->publicationStmt->pubPlace as $item_pubPlace) {
+                    array_push($item_pubPlace_array, $item_pubPlace);
+                    $this->set('item_pubPlace_array', $item_pubPlace_array);
+                }
+            }
+
+            if (isset($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->publicationStmt->date)) {
+                foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->publicationStmt->date as $item_publDate) {
+                    array_push($item_publDate_array, $item_publDate);
+                    $this->set('item_publDate_array', $item_publDate_array);
+                }
+            }
+
+            if (isset($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->publicationStmt->biblScope)) {
+                foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->publicationStmt->biblScope as $item_biblScope) {
+                    array_push($item_biblScope_array, $item_biblScope);
+                    $this->set('item_biblScope_array', $item_biblScope_array);
+                }
+            }
+
+            if (isset($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->extent)) {
+                foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->extent as $item_extent) {
+                    array_push($item_extent_array, $item_extent);
+                    $this->set('item_extent_array', $item_extent_array);
+                }
+            }
+
+            if (isset($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->seriesStmt->title)) {
+                foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->seriesStmt->title as $item_series) {
+                    array_push($item_series_array, $item_series);
+                    $this->set('item_series_array', $item_series_array);
+                }
+            }
+
+            if (isset($xmlObject->teiCorpus->teiHeader[$a]->revisionDesc)) {
+                foreach ($xmlObject->teiCorpus->teiHeader[$a]->revisionDesc->change->attributes() as $attrib => $item_revision) {
+                    #var_dump($attrib);
+                    if ($attrib == 'n') {
+                        array_push($type_revision_array, $item_revision);
+                        $this->set('type_revision_array', $type_revision_array);
+                    }
+                    elseif ($attrib == 'when') {
+                        array_push($date_revision_array, $item_revision);
+                        $this->set('date_revision_array', $date_revision_array);
+                    }
+                    elseif ($attrib == 'who') {
+                        array_push($who_revision_array, $item_revision);
+                        $this->set('who_revision_array', $who_revision_array);
+                    }
+                }
+
+                foreach ($xmlObject->teiCorpus->teiHeader[$a]->revisionDesc->change as $item_revision) {
+                    #var_dump($item_revision);
+                    array_push($item_revision_array, $item_revision);
+                    $this->set('item_revision_array', $item_revision_array);
+                }
+            }
+        }
+
+        #Format(e)
+        for($i=0;$i<sizeof($xmlObject->teiHeader->encodingDesc);$i++) {
+            #if ($xmlObject->teiHeader->encodingDesc[$i]->appInfo->application->attributes()) {
+            if ($xmlObject->teiHeader->encodingDesc[$i]) {
+                foreach ($xmlObject->teiHeader->encodingDesc[$i]->editorialDecl->segmentation->p as $segmentation) {
+                    array_push($segmentation_array, $segmentation);
+                    $this->set('segmentation_array', $segmentation_array);
+                }
+
+                foreach ($xmlObject->teiHeader->encodingDesc[$i]->editorialDecl->normalization->p as $normalization) {
+                    array_push($normalization_array, $normalization);
+                    $this->set('normalization_array', $normalization_array);
+                }
+
+                foreach ($xmlObject->teiHeader->encodingDesc[0]->tagsDecl->namespace as $namespace) {
+                    array_push($namespace_tei_array, $namespace["name"]);
+                    $this->set('namespace_tei_array', $namespace_tei_array);
+                }
+
+                if (isset($xmlObject->teiHeader->encodingDesc[1]->tagsDecl->namespace)) {
+                    foreach ($xmlObject->teiHeader->encodingDesc[1]->tagsDecl->namespace as $namespace) {
+                        array_push($namespace_exb_array, $namespace["name"]);
+                        $this->set('namespace_exb_array', $namespace_exb_array);
+                    }
+                }
+
+                if (isset($xmlObject->teiHeader->encodingDesc[$i]->tagsDecl->namespace)) {
+                    foreach ($xmlObject->teiHeader->encodingDesc[$i]->tagsDecl->namespace as $namespace) {
+                        array_push($namespace_xml_array, $namespace["name"]);
+                        $this->set('namespace_xml_array', $namespace_xml_array);
+
+                        array_push($namespace_xml_rend_array, $namespace["rend"]);
+                        $this->set('namespace_xml_rend_array', $namespace_xml_rend_array);
+
+                        if ($namespace["rend"] == 'Transcription') {
+                            array_push($namespace_trans_array, $namespace->tagUsage);
+                            $this->set('namespace_trans_array', $namespace_trans_array);
+
+                            array_push($namespace_xml_trans_array, $namespace["name"]);
+                            $this->set('namespace_xml_trans_array', $namespace_xml_trans_array);
+
+                        }
+                        else if ($namespace["rend"] == 'Lexical') {
+                            array_push($namespace_lexical_array, $namespace->tagUsage);
+                            $this->set('namespace_lexical_array', $namespace_lexical_array);
+
+                            array_push($namespace_array, $namespace);
+                            $this->set('namespace_array', $namespace_array);
+
+                            array_push($namespace_xml_lexical_array, $namespace["name"]);
+                            $this->set('namespace_xml_lexical_array', $namespace_xml_lexical_array);
+                        }
+                        else if ($namespace["rend"] == 'Graphical') {
+                            array_push($namespace_graphical_array, $namespace->tagUsage);
+                            $this->set('namespace_graphical_array', $namespace_graphical_array);
+
+                            array_push($namespace_array, $namespace);
+                            $this->set('namespace_array', $namespace_array);
+
+                            array_push($namespace_xml_graphical_array, $namespace["name"]);
+                            $this->set('namespace_xml_graphical_array', $namespace_xml_graphical_array);
+                        }
+                        else if ($namespace["rend"] == 'Syntactic') {
+                            array_push($namespace_syntactic_array, $namespace->tagUsage);
+                            $this->set('namespace_syntactic_array', $namespace_syntactic_array);
+
+                            array_push($namespace_array, $namespace);
+                            $this->set('namespace_array', $namespace_array);
+
+                            array_push($namespace_xml_syntactic_array, $namespace["name"]);
+                            $this->set('namespace_xml_syntactic_array', $namespace_xml_syntactic_array);
+                        }
+                        else if ($namespace["rend"] == 'Other') {
+                            array_push($namespace_other_array, $namespace->tagUsage);
+                            $this->set('namespace_other_array', $namespace_other_array);
+
+                            array_push($namespace_array, $namespace);
+                            $this->set('namespace_array', $namespace_array);
+
+                            array_push($namespace_xml_other_array, $namespace["name"]);
+                            $this->set('namespace_xml_other_array', $namespace_xml_other_array);
+                        }
+                    }
+                    /*
+                    foreach ($xmlObject->teiHeader->encodingDesc[$i]->tagsDecl->namespace as $namespace) {
+                        array_push($namespace_xml_array, $namespace["name"]);
+                        $this->set('namespace_xml_array', $namespace_xml_array);
+
+                        array_push($namespace_relANNIS_array, $namespace["name"]);
+                        $this->set('namespace_relANNIS_array', $namespace_relANNIS_array);
+
+                        if ($namespace["name"] == 'tok') {
+                            $this->set('tok_text', $xmlObject->teiHeader->encodingDesc[2]->tagsDecl->namespace->tagUsage);
+                        }
+                        elseif ($namespace["name"] == 'clean') {
+                            $this->set('clean_text', $xmlObject->teiHeader->encodingDesc[2]->tagsDecl->namespace[1]->tagUsage);
+                        }
+                        elseif ($namespace["name"] == 'norm') {
+                            if (isset($xmlObject->teiHeader->encodingDesc[2]->tagsDecl->namespace[2]->tagUsage)) {
+                                $this->set('norm_text', $xmlObject->teiHeader->encodingDesc[2]->tagsDecl->namespace[2]->tagUsage);
+                            }
+                        }
+                    }
+                    */
+                }
+
+                foreach ($xmlObject->teiHeader->encodingDesc[$i]->appInfo->application->attributes() as $attrib => $format) {
+                    if ($attrib == 'ident') {
+                        array_push($download_format, $format);
+                        $this->set('download_format', $download_format);
+                    }
+                    else {
+                        array_push($version_format, $format);
+                        $this->set('version_format', $version_format);
+                    }
+                }
+
+                foreach ($xmlObject->teiHeader->encodingDesc[$i]->appInfo->application->label as $format) {
+                    array_push($label_format, $format);
+                    $this->set('label_format', $label_format);
+                }
+            }
+        }
+
+        if (isset($xmlObject->teiHeader->encodingDesc[2]->tagsDecl->namespace)) {
+            //work in progress, 130213
+            foreach ($xmlObject->teiHeader->encodingDesc[2]->tagsDecl->namespace as $pos_annotation) {
+                if ($pos_annotation ["name"] == 'pos') {
+                    foreach ($xmlObject->teiHeader->encodingDesc[2]->tagsDecl->namespace[3]->tagUsage as $item_tagUsage) {
+                        array_push($item_tagUsage_array, $item_tagUsage);
+                        $this->set('item_tagUsage_array', $item_tagUsage_array);
+                    }
+                }
+
+                if ($pos_annotation ["name"] == 'foreign') {
+                    $this->set('foreign_text', $xmlObject->teiHeader->encodingDesc[2]->tagsDecl->namespace[6]->tagUsage);
+                }
+
+                if ($pos_annotation ["name"] == 'lang') {
+                    foreach ($xmlObject->teiHeader->encodingDesc[2]->tagsDecl->namespace[7]->tagUsage as $item_lang_tagUsage) {
+                        array_push($item_lang_tagUsage_array, $item_lang_tagUsage);
+                        $this->set('item_lang_tagUsage_array', $item_lang_tagUsage_array);
+                    }
+                }
+
+                if ($pos_annotation ["name"] == 'hi') {
+                    $this->set('hi_text', $xmlObject->teiHeader->encodingDesc[2]->tagsDecl->namespace[37]->tagUsage);
+                }
+            }
+        }
+        //---------------------------
+
+        //if (titleStmt corresp="pos") {
+
+        //PreparationStep
+        for($g=0;$g<sizeof($xmlObject->teiCorpus->teiCorpus->teiHeader);$g++) {
+            foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader as $preparation_header) {
+                array_push($preparation_header_array, $preparation_header);
+                $this->set('preparation_header_array', $preparation_header_array);
+            }
+
+            foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->title as $layer_title) {
+                array_push($layer_title_array, $layer_title);
+                $this->set('layer_title_array', $layer_title_array);
+            }
+
+            for($x=0;$x<sizeof($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor);$x++) {
+                if (isset($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->persName->forename)) {
+                    foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->persName->forename as $prep_editor_forename) {
+                        array_push($prep_editor_forename_array, $prep_editor_forename);
+                        $this->set('prep_editor_forename_array', $prep_editor_forename_array);
+                    }
+                }
+                if (isset($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->persName->surname)) {
+                    foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->persName->surname as $prep_editor_surname) {
+                        array_push($prep_editor_surname_array, $prep_editor_surname);
+                        $this->set('prep_editor_surname_array', $prep_editor_surname_array);
+                    }
+                }
+                if (isset($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->affiliation)) {
+                    for ($q=0;$q<sizeof($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor->affiliation->orgName);$q++) {
+                        if ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q]->attributes() == 'Department') {
+                            $prep_editor_department_name = $xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q];
+
+                            array_push($prep_editor_department_name_array, $prep_editor_department_name);
+                            $this->set('prep_editor_department_name_array', $prep_editor_department_name_array);
+                        }
+                        elseif ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q]->attributes() == 'Institution') {
+                            $prep_editor_institution_name = $xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q];
+
+                            array_push($prep_editor_institution_name_array, $prep_editor_institution_name);
+                            $this->set('prep_editor_institution_name_array', $prep_editor_institution_name_array);
+                        }
+
+                        foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q] as $prep_editor_orgname) {
+                            array_push($prep_editor_orgname_array, $prep_editor_orgname);
+                            $this->set('prep_editor_orgname_array', $prep_editor_orgname_array);
+                        }
+
+                    }
+                }
+            }
+
+            for($y=0;$y<sizeof($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author);$y++) {
+                if (isset($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author[$y]->persName->forename)) {
+                    foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author[$y]->persName->forename as $prep_author_forename) {
+                        array_push($prep_author_forename_array, $prep_author_forename);
+                        $this->set('prep_author_forename_array', $prep_author_forename_array);
+                    }
+
+                }
+                if (isset($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author[$y]->persName->surname)) {
+                    foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author[$y]->persName->surname as $prep_author_surname) {
+                        array_push($prep_author_surname_array, $prep_author_surname);
+                        $this->set('prep_author_surname_array', $prep_author_surname_array);
+                    }
+                }
+                if (isset($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author[$y]->affiliation)) {
+                    for ($q=0;$q<sizeof($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author->affiliation->orgName);$q++) {
+                        if ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q]->attributes() == 'Department') {
+                            $prep_author_department_name = $xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q];
+
+                            array_push($prep_author_department_name_array, $prep_author_department_name);
+                            $this->set('prep_author_department_name_array', $prep_author_department_name_array);
+                        }
+                        elseif ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q]->attributes() == 'Institution') {
+                            $prep_author_institution_name = $xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q];
+
+                            array_push($prep_author_institution_name_array, $prep_author_institution_name);
+                            $this->set('prep_author_institution_name_array', $prep_author_institution_name_array);
+                        }
+
+                        foreach ($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q] as $prep_author_orgname) {
+                            array_push($prep_author_orgname_array, $prep_author_orgname);
+                            $this->set('prep_author_orgname_array', $prep_author_orgname_array);
+                        }
+                    }
+                }
+            }
+            #}
+
+            #for($z=0;$z<sizeof($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc);$z++) {
+            foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->extent as $prep_extent) {
+                array_push($prep_extent_array, $prep_extent);
+                $this->set('prep_extent_array', $prep_extent_array);
+            }
+
+            foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->publicationStmt->date as $prep_publicationStmt) {
+                array_push($prep_publicationStmt_array, $prep_publicationStmt);
+                $this->set('prep_publicationStmt_array', $prep_publicationStmt_array);
+            }
+=======
+	}
+>>>>>>> origin/zielkede
+
+	public function objects($value,$date=null,$date2=null) {
+		App::uses('Xml','Utility'); 
+		$download_format = array();
+		$version_format = array();
+		$label_format = array();
+		
+		$encodingDesc_array = array();
+		
+		$segmentation_array = array();
+		$normalization_array = array();
+		$namespace_array = array();
+		
+		$register_array = array();
+		$short_array = array();
+		
+		$namespace_tei_array = array();
+		$namespace_exb_array = array();
+		$namespace_relANNIS_array = array();
+		$namespace_xml_array = array();
+		$namespace_xml_rend_array = array();
+		
+		$editor_forename_array = array();
+		$editor_surname_array = array();
+		$editor_department_name_array = array();
+		$editor_institution_name_array = array();
+		
+		$author_forename_array = array();
+		$author_surname_array = array();
+		$author_department_name_array = array();
+		$author_institution_name_array = array();
+		
+		$items_array = array();
+		$item_title_array = array();
+		
+		$item_surname_array = array();
+		$item_forename_array = array();
+		$editor_forename_doc_array = array();
+		$editor_surname_doc_array = array();
+		
+		$item_publDate_array = array();
+		$item_biblScope_array = array();
+		$item_publisher_array = array();
+		$item_pubPlace_array = array();
+		$item_extent_array = array();
+		
+		$item_series_array = array();
+		$item_revision_array = array();
+		
+		$date_revision_array = array();
+		$type_revision_array = array();
+		$who_revision_array = array();
+		$date_revision_array = array();
+		
+		$valItem_array = array();
+		$annotItem_array = array();
+		
+		$item_tagUsage_array = array();
+		$item_lang_tagUsage_array = array();
+		
+		//@PrepStep
+		$prep_editor_forename_array = array();
+		$prep_editor_surname_array = array();
+		$prep_editor_department_name_array = array();
+		$prep_editor_institution_name_array = array();
+		
+		$prep_author_forename_array = array();
+		$prep_author_surname_array = array();
+		$prep_author_department_name_array = array();
+		$prep_author_institution_name_array = array();
+		
+		$prep_encodingDesc_array = array();
+		$prep_encodingDesc_n_array = array();
+		$post_encodingDesc_array = array();
+		
+		$appInfo_array = array();
+		
+		$appInfo_trans_array = array();
+		$appInfo_style_array = array();
+		
+		$appInfo_markup_style_array= array();
+		
+		
+		$appInfo_markup_array = array();
+		$appInfo_tok_array = array();
+		$appInfo_mapping_array = array();
+		
+		//180213
+		$appInfo_tok_style_array = array();
+		$prep_tok_application_subtype_array = array();
+		$prep_tok_application_array = array();
+		$prep_tok_app_label_array = array();
+		
+		//more and more
+		$appInfo_mapping_style_array = array();
+		$prep_mapping_application_subtype_array = array();
+		$prep_mapping_application_array = array();
+		$prep_mapping_app_label_array = array();
+		
+		$prep_application_array = array();
+		$prep_application_subtype_array = array();
+		
+		$prep_app_label_array =array();
+		
+		$prep_pos_encodingDesc_array = array();
+		
+		$layer_title_array = array();
+		
+		$prep_segmentation_array = array();
+		$prep_normalization_array = array();
+		$prep_normalization_desc_array = array();
+		$prep_segmentation_desc_array = array();
+		
+		$appInfo_ann_array = array();
+		$appInfo_ann_style_array = array();
+		$prep_ann_application_subtype_array = array();
+		$prep_ann_application_array = array();
+		$prep_application_ann_type_array = array();
+		$prep_ann_app_label_array = array();
+		
+		$prep_ann_change_when_array = array();
+		$prep_ann_change_who_array = array();
+		$prep_ann_change_desc_array = array();
+		
+		$prep_tok_change_when_array = array();
+		$prep_tok_change_who_array = array();
+		$prep_tok_change_desc_array = array();
+		
+		$prep_application_type_array = array();
+		$prep_application_markup_type_array = array();
+		$prep_application_tok_type_array = array();
+		$prep_application_mapping_type_array = array();
+		$prep_markup_application_subtype_array = array();
+		$prep_markup_application_array = array();
+		$prep_markup_app_label_array = array();
+		
+		$correction_method_array = array();
+		$correction_status_array = array();
+		$prep_correction_desc_array = array();
+		
+		$prep_publicationStmt_array = array();
+		$prep_ref_target_array = array();
+		$prep_extent_array = array();
+		
+		$q_size_array = array();
+		$preparation_header_array = array();
+		$p_array = array();
+		
+		$namespace_trans_array = array();	
+		$namespace_lexical_array = array();
+		$namespace_graphical_array = array();
+		$namespace_syntactic_array = array();
+		$namespace_other_array = array();		
+		$namespace_xml_trans_array = array();
+		$namespace_xml_lexical_array = array();
+		$namespace_xml_graphical_array = array();
+		$namespace_xml_syntactic_array = array();
+		$namespace_xml_other_array = array();
+		
+		$revisionDesc_array = array();
+
+		try {
+		    if(isset($_POST['reveal'])){
+		        $this->set('reveal',$_POST['reveal']);
+            }
+		    if ($date) $date = $date.".".$date2;
+
+			$result_array = $this->XMLObject->getObjectTEIXML($value,$date);
+			#Error handling
+			if($result_array['http_code'] != '200'){
+				if ($result_array['http_code'] == '401') {
+					$this->Session->setFlash(__('Access denied, Object state may be inactive'));
+				}
+				else {
+					if ($result_array['http_code'] == '404') {
+					    $msgdate = '';
+					
+					if ($date) $msgdate = ' Version: '.$date;
+						$this->Session->setFlash('No TEI_Header available for object '. urldecode($value) .$msgdate);
+					}
+					else {
+						$this->Session->setFlash('Error Code:'.$result_array['http_code']);
+					}
+				}
+				$this->redirect($this->referer());
+			}
+			#set view variables
+			$this->set('versionDate', urldecode($date));
+			$xmlObject = Xml::build($result_array['response']); // Here will throw a Exception
+			
+			if (isset($xmlObject->teiHeader)) {
+				#Corpus
+				$this->set('pid', $value);
+				$this->set('title', $xmlObject->teiHeader->fileDesc->titleStmt->title);
+				$this->set('authority', $xmlObject->teiHeader->fileDesc->publicationStmt->authority);
+				$this->set('av_status', $xmlObject->teiHeader->fileDesc->publicationStmt->availability);
+				$this->set('project', $xmlObject->teiHeader->fileDesc->publicationStmt->availability->p);
+				$this->set('corpusrelease', $xmlObject->teiHeader->fileDesc->publicationStmt->date['when']);
+				$this->set('editor', $xmlObject->teiHeader->fileDesc->titleStmt->editor);
+				
+				if (isset($xmlObject->teiHeader->encodingDesc[0]->projectDesc->p->ref['target'])) {
+					$this->set('homepage', $xmlObject->teiHeader->encodingDesc[0]->projectDesc->p->ref['target']);
+				}
+
+				$this->set('language', $xmlObject->teiHeader->profileDesc->langUsage->language);
+				
+				if (isset($xmlObject->teiHeader->encodingDesc[1]->projectDesc)) {
+					$this->set('description', $xmlObject->teiHeader->encodingDesc[1]->projectDesc);
+				}
+				elseif (isset($xmlObject->teiHeader->encodingDesc[0]->projectDesc)) {
+					$this->set('description', $xmlObject->teiHeader->encodingDesc[0]->projectDesc);
+				}
+				
+				$total_editor_forename_array = (int)count($xmlObject->teiHeader->fileDesc->titleStmt->editor);
+				for($x=0;$x<$total_editor_forename_array;$x++) {
+					#if (isset($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->persName->forename)) {
+						foreach ($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->persName->forename as $editor_forename) {
+								array_push($editor_forename_array, $editor_forename);
+								$this->set('editor_forename_array', $editor_forename_array);
+						}
+					#}
+					#if (isset($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->persName->surname)) {
+						foreach ($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->persName->surname as $editor_surname) {
+								array_push($editor_surname_array, $editor_surname);
+								$this->set('editor_surname_array', $editor_surname_array);
+						}
+					#}
+					#if (isset($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->affiliation)) {
+						for ($q=0;$q<sizeof($xmlObject->teiHeader->fileDesc->titleStmt->editor->affiliation->orgName);$q++) {
+							if ($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q]->attributes() == 'Department') {
+								$editor_department_name = $xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q];
+								
+								array_push($editor_department_name_array, $editor_department_name);
+								$this->set('editor_department_name_array', $editor_department_name_array);
+							}
+							elseif ($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q]->attributes() == 'Institution') {
+								$editor_institution_name = $xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q];
+								
+								array_push($editor_institution_name_array, $editor_institution_name);
+								$this->set('editor_institution_name_array', $editor_institution_name_array);
+							}
+							
+							foreach ($xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q] as $editor_orgname) {
+									array_push($editor_orgname_array, $editor_orgname);
+									$this->set('editor_orgname_array', $editor_orgname_array);
+							}
+							
+						}
+					#}
+				}
+				
+				$total_author_forename_array = (int)count($xmlObject->teiHeader->fileDesc->titleStmt->author);
+				for($y=0;$y<$total_author_forename_array;$y++) {
+					#if (isset($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->persName->forename)) {
+						foreach ($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->persName->forename as $author_forename) {
+								array_push($author_forename_array, $author_forename);
+								$this->set('author_forename_array', $author_forename_array);
+						}
+					#}
+					#if (isset($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->persName->surname)) {
+						foreach ($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->persName->surname as $author_surname) {
+								array_push($author_surname_array, $author_surname);
+								$this->set('author_surname_array', $author_surname_array);
+						}
+					#}
+					#if (isset($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation)) {
+						for ($q=0;$q<sizeof($xmlObject->teiHeader->fileDesc->titleStmt->author->affiliation->orgName);$q++) {
+							if ($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q]->attributes() == 'Department') {
+								$author_department_name = $xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q];
+								
+								array_push($author_department_name_array, $author_department_name);
+								$this->set('author_department_name_array', $author_department_name_array);
+							}
+							elseif ($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q]->attributes() == 'Institution') {
+								$author_institution_name = $xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q];
+								
+								array_push($author_institution_name_array, $author_institution_name);
+								$this->set('author_institution_name_array', $author_institution_name_array);
+							}
+							
+							foreach ($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q] as $author_orgname) {
+									array_push($author_orgname_array, $author_orgname);
+									$this->set('author_orgname_array', $author_orgname_array);
+							}
+						}
+					#}
+				}
+				
+				$this->set('version', $xmlObject->teiHeader->revisionDesc->change["n"]);
+				$this->set('extent', $xmlObject->teiHeader->fileDesc->extent);
+				$this->set('publDate', $xmlObject->teiHeader->fileDesc->publicationStmt->date ["when"]);
+				$this->set('status', $xmlObject->teiHeader->fileDesc->publicationStmt->availability->p);
+						
+				#SubCorpus
+				$this->set('item', $xmlObject->teiCorpus->teiHeader->teiHeader);
+					
+					//item "corresp"	
+					#if (isset($xmlObject->teiHeader->fileDesc->sourceDesc->list)) {
+						foreach ($xmlObject->teiHeader->fileDesc->sourceDesc->list->item as $item_title) {
+							array_push($item_title_array, $item_title["corresp"]);
+							$this->set('item_title_array', $item_title_array);
+						}
+					#}
+
+				$total_teiHeader_array = (int)count($xmlObject->teiCorpus->teiHeader);
+				for($a=0;$a<$total_teiHeader_array;$a++) {
+					foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->attributes('xml', TRUE) as $short) {
+						array_push($short_array, $short);
+						$this->set('short_array', $short_array);
+					}
+				
+					foreach ($xmlObject->teiCorpus->teiHeader[$a]->attributes() as $attrib => $style) {
+						if ($attrib == 'style') {
+							array_push($register_array, $style);
+							$this->set('register_array', $register_array);
+						}
+					}
+					
+					foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->titleStmt->title as $item) {
+						array_push($items_array, $item);
+						$this->set('items_array', $items_array);
+					}
+					
+					#if (isset($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->titleStmt->author->forename)) {
+						foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->titleStmt->author->forename as $item_forename) {
+							array_push($item_forename_array, $item_forename);
+							$this->set('item_forename_array', $item_forename_array);
+						}
+					#}
+					
+					#if (isset($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->titleStmt->author->surname)) {
+						foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->titleStmt->author->surname as $item_surname) {
+								array_push($item_surname_array, $item_surname);
+								$this->set('item_surname_array', $item_surname_array);
+						}
+					#}
+					
+					
+					#if (isset($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->titleStmt->editor->forename)) {
+						foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->titleStmt->editor->forename as $editor_forename_doc) {
+							array_push($editor_forename_doc_array, $editor_forename_doc);
+							$this->set('editor_forename_doc_array', $editor_forename_doc_array);
+						}
+					#}
+					
+					#if (isset($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->titleStmt->editor->surname)) {
+						foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->titleStmt->editor->surname as $editor_surname_doc) {
+								array_push($editor_surname_doc_array, $editor_surname_doc);
+								$this->set('editor_surname_doc_array', $editor_surname_doc_array);
+						}
+					#}
+					
+					#publisher
+					#if (isset($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->publicationStmt->publisher)) {
+							foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->publicationStmt->publisher as $item_publisher) {
+									array_push($item_publisher_array, $item_publisher);
+									$this->set('item_publisher_array', $item_publisher_array);
+							}
+					#}
+
+					#if (isset($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->publicationStmt->pubPlace)) {
+							foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->publicationStmt->pubPlace as $item_pubPlace) {
+									array_push($item_pubPlace_array, $item_pubPlace);
+									$this->set('item_pubPlace_array', $item_pubPlace_array);
+							}
+					#}
+					
+					#if (isset($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->publicationStmt->date)) {
+							foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->publicationStmt->date as $item_publDate) {
+									array_push($item_publDate_array, $item_publDate);
+									$this->set('item_publDate_array', $item_publDate_array);
+							}
+					#}
+					
+					#if (isset($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->publicationStmt->biblScope)) {
+							foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->publicationStmt->biblScope as $item_biblScope) {
+									array_push($item_biblScope_array, $item_biblScope);
+									$this->set('item_biblScope_array', $item_biblScope_array);
+							}
+					#}
+					
+					#if (isset($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->extent)) {
+						foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->extent as $item_extent) {
+								array_push($item_extent_array, $item_extent);
+								$this->set('item_extent_array', $item_extent_array);
+						}
+					#}
+					
+					#if (isset($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->seriesStmt->title)) {
+						foreach ($xmlObject->teiCorpus->teiHeader[$a]->fileDesc->seriesStmt->title as $item_series) {
+								array_push($item_series_array, $item_series);
+								$this->set('item_series_array', $item_series_array);
+						}
+					#}
+					
+					#if (isset($xmlObject->teiCorpus->teiHeader[$a]->revisionDesc)) {
+						foreach ($xmlObject->teiCorpus->teiHeader[$a]->revisionDesc->change->attributes() as $attrib => $item_revision) {
+								if ($attrib == 'n') {
+									array_push($type_revision_array, $item_revision);
+									$this->set('type_revision_array', $type_revision_array);
+								}
+								elseif ($attrib == 'when') {
+									array_push($date_revision_array, $item_revision);
+									$this->set('date_revision_array', $date_revision_array);
+								}
+								elseif ($attrib == 'who') {
+									array_push($who_revision_array, $item_revision);
+									$this->set('who_revision_array', $who_revision_array);
+								}
+						}
+						
+						foreach ($xmlObject->teiCorpus->teiHeader[$a]->revisionDesc->change as $item_revision) {
+								array_push($item_revision_array, $item_revision);
+								$this->set('item_revision_array', $item_revision_array);
+						}
+					#}
+				}
+				
+				#Format(e)
+				$total_encodigDesc_array = (int)count($xmlObject->teiHeader->encodingDesc);
+				for($i=0;$i<$total_encodigDesc_array;$i++) {
+					#if ($xmlObject->teiHeader->encodingDesc[$i]) {
+						foreach ($xmlObject->teiHeader->encodingDesc[$i]->editorialDecl->segmentation->p as $segmentation) {
+							array_push($segmentation_array, $segmentation);
+							$this->set('segmentation_array', $segmentation_array);
+						}
+						
+						foreach ($xmlObject->teiHeader->encodingDesc[$i]->editorialDecl->normalization->p as $normalization) {
+							array_push($normalization_array, $normalization);
+							$this->set('normalization_array', $normalization_array);
+						}
+						
+						foreach ($xmlObject->teiHeader->encodingDesc[0]->tagsDecl->namespace as $namespace) {
+							array_push($namespace_tei_array, $namespace["name"]);
+							$this->set('namespace_tei_array', $namespace_tei_array);
+						}
+						
+						if (isset($xmlObject->teiHeader->encodingDesc[1]->tagsDecl->namespace)) {
+							foreach ($xmlObject->teiHeader->encodingDesc[1]->tagsDecl->namespace as $namespace) {
+								array_push($namespace_exb_array, $namespace["name"]);
+								$this->set('namespace_exb_array', $namespace_exb_array);
+							}
+						}
+						
+						if (isset($xmlObject->teiHeader->encodingDesc[$i]->tagsDecl->namespace)) {
+							foreach ($xmlObject->teiHeader->encodingDesc[$i]->tagsDecl->namespace as $namespace) {
+								array_push($namespace_xml_array, $namespace["name"]);
+								$this->set('namespace_xml_array', $namespace_xml_array);
+								
+								array_push($namespace_xml_rend_array, $namespace["rend"]);
+								$this->set('namespace_xml_rend_array', $namespace_xml_rend_array);
+								
+								if ($namespace["rend"] == 'Transcription') {
+									array_push($namespace_trans_array, $namespace->tagUsage);
+									$this->set('namespace_trans_array', $namespace_trans_array);
+								
+									array_push($namespace_xml_trans_array, $namespace["name"]);
+									$this->set('namespace_xml_trans_array', $namespace_xml_trans_array);
+
+								}
+								else if ($namespace["rend"] == 'Lexical') {
+									array_push($namespace_lexical_array, $namespace->tagUsage);
+									$this->set('namespace_lexical_array', $namespace_lexical_array);
+								
+									array_push($namespace_array, $namespace);
+									$this->set('namespace_array', $namespace_array);
+								
+									array_push($namespace_xml_lexical_array, $namespace["name"]);
+									$this->set('namespace_xml_lexical_array', $namespace_xml_lexical_array);
+								}
+								else if ($namespace["rend"] == 'Graphical') {
+									array_push($namespace_graphical_array, $namespace->tagUsage);
+									$this->set('namespace_graphical_array', $namespace_graphical_array);
+								
+									array_push($namespace_array, $namespace);
+									$this->set('namespace_array', $namespace_array);
+								
+									array_push($namespace_xml_graphical_array, $namespace["name"]);
+									$this->set('namespace_xml_graphical_array', $namespace_xml_graphical_array);
+								}
+								else if ($namespace["rend"] == 'Syntactic') {
+									array_push($namespace_syntactic_array, $namespace->tagUsage);
+									$this->set('namespace_syntactic_array', $namespace_syntactic_array);
+								
+									array_push($namespace_array, $namespace);
+									$this->set('namespace_array', $namespace_array);
+								
+									array_push($namespace_xml_syntactic_array, $namespace["name"]);
+									$this->set('namespace_xml_syntactic_array', $namespace_xml_syntactic_array);
+								}
+								else if ($namespace["rend"] == 'Other') {
+									array_push($namespace_other_array, $namespace->tagUsage);
+									$this->set('namespace_other_array', $namespace_other_array);
+								
+									array_push($namespace_array, $namespace);
+									$this->set('namespace_array', $namespace_array);
+								
+									array_push($namespace_xml_other_array, $namespace["name"]);
+									$this->set('namespace_xml_other_array', $namespace_xml_other_array);
+								}
+							}
+						}
+						
+						foreach ($xmlObject->teiHeader->encodingDesc[$i]->appInfo->application->attributes() as $attrib => $format) {
+							if ($attrib == 'ident') {
+								array_push($download_format, $format);
+								$this->set('download_format', $download_format);
+							}
+							else {
+								array_push($version_format, $format);
+								$this->set('version_format', $version_format);
+							}
+						}
+										
+						foreach ($xmlObject->teiHeader->encodingDesc[$i]->appInfo->application->label as $format) {
+							array_push($label_format, $format);
+							$this->set('label_format', $label_format);
+						}
+					#}
+				}
+		
+				//PreparationStep
+				$total = (int)count($xmlObject->teiCorpus->teiCorpus->teiHeader);
+				for($g=0;$g<$total;$g++) {
+					foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc as $preparation_header) {
+						if (isset($preparation_header)) {
+							$encodingDescs = array();
+								
+							$encodingDescs[][$g] = $preparation_header; 
+							
+							array_push($preparation_header_array, $encodingDescs);
+							$this->set('preparation_header_array', $preparation_header_array);
+						} 
+						else $encodingDescs = "";
+					}
+					
+					// revisionDesc
+					foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->revisionDesc as $revisionDesc) {
+						array_push($revisionDesc_array, $revisionDesc);
+						$this->set('revisionDesc_array', $revisionDesc_array);
+					}
+
+					foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->title as $layer_title) {
+						array_push($layer_title_array, $layer_title);
+						$this->set('layer_title_array', $layer_title_array);
+					}
+					
+					$total2 = (int)count($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor);
+					for($x=0;$x<$total2;$x++) {
+						foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->persName->forename as $prep_editor_forename) {
+								array_push($prep_editor_forename_array, $prep_editor_forename);
+								$this->set('prep_editor_forename_array', $prep_editor_forename_array);
+						}
+
+						foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->persName->surname as $prep_editor_surname) {
+								array_push($prep_editor_surname_array, $prep_editor_surname);
+								$this->set('prep_editor_surname_array', $prep_editor_surname_array);
+						}
+					
+						$total3 = (int)count($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor->affiliation->orgName);
+						for($q =0; $q < $total3;$q++){
+							if ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q]->attributes() == 'Department') {
+								$prep_editor_department_name = $xmlObject->teiHeader->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q];
+								
+								array_push($prep_editor_department_name_array, $prep_editor_department_name);
+								$this->set('prep_editor_department_name_array', $prep_editor_department_name_array);
+							}
+							elseif ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q]->attributes() == 'Institution') {
+								$prep_editor_institution_name = $xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q];
+								
+								array_push($prep_editor_institution_name_array, $prep_editor_institution_name);
+								$this->set('prep_editor_institution_name_array', $prep_editor_institution_name_array);
+							}
+							
+							foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->editor[$x]->affiliation->orgName[$q] as $prep_editor_orgname) {
+									array_push($prep_editor_orgname_array, $prep_editor_orgname);
+									$this->set('prep_editor_orgname_array', $prep_editor_orgname_array);
+							}
+						}
+					}
+					
+					
+					$total4 = (int)count($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author);
+					for($y =0; $y < $total4;$y++){
+							foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author[$y]->persName->forename as $prep_author_forename) {
+									array_push($prep_author_forename_array, $prep_author_forename);
+									$this->set('prep_author_forename_array', $prep_author_forename_array);
+							}
+
+							foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author[$y]->persName->surname as $prep_author_surname) {
+									array_push($prep_author_surname_array, $prep_author_surname);
+									$this->set('prep_author_surname_array', $prep_author_surname_array);
+							}
+
+							$total5 = (int)count($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author->affiliation->orgName);
+							for($q =0; $q < $total5;$q++){
+							
+							#for ($q=0;$q<sizeof($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author->affiliation->orgName);$q++) {
+								if ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q]->attributes() == 'Department') {
+									$prep_author_department_name = $xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q];
+									
+									array_push($prep_author_department_name_array, $prep_author_department_name);
+									$this->set('prep_author_department_name_array', $prep_author_department_name_array);
+								}
+								elseif ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q]->attributes() == 'Institution') {
+									$prep_author_institution_name = $xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q];
+									
+									array_push($prep_author_institution_name_array, $prep_author_institution_name);
+									$this->set('prep_author_institution_name_array', $prep_author_institution_name_array);
+								}
+								
+								foreach ($xmlObject->teiHeader->fileDesc->titleStmt->author[$y]->affiliation->orgName[$q] as $prep_author_orgname) {
+										array_push($prep_author_orgname_array, $prep_author_orgname);
+										$this->set('prep_author_orgname_array', $prep_author_orgname_array);
+								}
+							}
+
+					}
+					
+					foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->extent as $prep_extent) {
+						array_push($prep_extent_array, $prep_extent);
+						$this->set('prep_extent_array', $prep_extent_array);
+					}
+					
+					foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->publicationStmt->date as $prep_publicationStmt) {
+						array_push($prep_publicationStmt_array, $prep_publicationStmt);
+						$this->set('prep_publicationStmt_array', $prep_publicationStmt_array);
+					}
+					
+					foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->fileDesc->sourceDesc->p->ref as $prep_ref_target) {
+						array_push($prep_ref_target_array, $prep_ref_target['target']);
+						$this->set('prep_ref_target_array', $prep_ref_target_array);
+					}
+					
+					foreach ($xmlObject->teiCorpus->teiCorpus->teiHeader[$g]->encodingDesc as $prep_encodingDesc) {
+						array_push($prep_encodingDesc_array, $prep_encodingDesc);
+						$this->set('prep_encodingDesc_array', $prep_encodingDesc_array);
+					}
+
+//end check 300513
+				}
+
+				#if (isset($xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->publicationStmt->date["when"])) {
+					$this->set('prep_release', $xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->publicationStmt->date["when"]);
+				#}
+				
+				#if (isset($xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->publicationStmt->date)) {
+					$this->set('prep_desc', $xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->publicationStmt->date);
+				#}
+				
+				#if (isset($xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->sourceDesc->p->ref["target"])) {
+					$this->set('prep_source_ref', $xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->sourceDesc->p->ref["target"]);
+				#}	
+				
+				#if (isset($xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->sourceDesc->p->ref)) {
+					$this->set('prep_source_desc', $xmlObject->teiCorpus->teiCorpus->teiHeader->fileDesc->sourceDesc->p->ref);
+				#}
+				
+				
+			//no TEI Header set
+			}
+			else {
+				$this->Session->setFlash('No TEI-Header available for Object '.$value);
+				$this->set('pid', $value);
+				$this->set('title', $xmlObject->objLabel);
+				$this->set('editor', $xmlObject->objOwnerId);
+				$this->set('extent', '');
+				$this->set('publDate', ''); #$xmlObject->objModels->ObjCreateDate
+				$this->set('status', $xmlObject->objState);
+			}
+		} 
+		catch (XmlException $e) {
+		    throw new InternalErrorException();
+		}	
+		try {
+			$xmlObj = Xml::build($this->XMLObject->getObjectVersion($value)); // Here will throw a Exception
+		}
+		catch (XmlException $e) {
+		    throw new InternalErrorException();
+		}		
+		$this->set('getObjectVersionXml', htmlentities($this->XMLObject->getObjectVersion($value)));
+	}
+	
+	public function edit($id) {}
+	
+	public function delete($pid = null, $label = null) {
+		if($pid){
+			if(!$permission = $this->permission($pid)){
+				$this->Session->setFlash(__('No permission to delete Corpus.'));
+			}else{
+				$result_array = $this->XMLObject->deleteFedora($pid);
+                $this->XMLObject->deleteFromIndex($pid);
+				if($result_array['http_code'] == '200'){
+					$this->Session->setFlash('Object '.$pid.' purged.', 'default', array('class' => 'success'));
+				}else{
+					if($result_array['http_code'] == '404'){
+						$this->Session->setFlash('Object '.$pid.' not found.');
+					}					
+					$this->set('response', $result_array['response']);
+				}
+			}
+		}
+		$xml_answer = $this->XMLObject->showAllObjectsXML();
+		#$listDatastream_xml = $this->XMLObject->listDatastream();
+		$htmloutput = explode("\n", $xml_answer);
+		$this->set('xmloutput', htmlentities($xml_answer));
+		#$this->set('htmloutput', $htmloutput);
+
+	}
+	
+	public function modify(){
+		$xml_answer = $this->XMLObject->showAllObjectsXML();
+		#$listDatastream_xml = $this->XMLObject->listDatastream();
+		$htmloutput = explode("\n", $xml_answer);
+		$this->set('xmloutput', htmlentities($xml_answer));
+	}
+	
+	public function modifyObject($pid = null,$owner = null){
+		App::uses('Xml','Utility');
+		if(!$permission = $this->permission($pid,$owner)){
+			$this->Session->setFlash(__('No permission to modify Corpus.'));
+			$this->redirect(array('action' => 'modify'));
+		}
+		#check id
+		if($pid){
+		    $pid = urldecode($pid);
+        }else{
+            if(isset($_POST) && !empty($_POST)) $pid = $_POST['id'];
+        }	
+		if(!$pid){
+			 $this->Session->setFlash(__('No valid ID'));
+			 $this->redirect(array('action' => 'modify'));
+		}
+
+		#check post-data
+		if(isset($_POST) && !empty($_POST)){	
+			try{
+				#validate + check if data was modified
+				$result_array = $this->XMLObject->getObjectXML($pid);
+				if($result_array['http_code'] != '200'){
+					if($result_array['http_code'] == '401') $this->Session->setFlash(__('Access denied, Object state may be inactive'));
+					 $this->redirect(array('action' => 'modify'));
+				}
+				$xmlObject = Xml::build($result_array['response']); // Here will throw a Exception
+				#$xmlObject = Xml::build($this->XMLObject->getObjectXML($pid));	
+				$validate_array['label']=$xmlObject->objLabel;
+				$validate_array['owner']=$xmlObject->objOwnerId;
+				$validate_array['state']=$xmlObject->objState;
+				$flashmsg = $this->XMLObject->validateModifyObject($_POST,$validate_array);
+				if($flashmsg != ''){
+					$this->Session->setFlash($flashmsg);
+				
+				# modify data
+				}else{
+					#set modify data
+					if($validate_array['owner']!=$_POST['owner']) $data['owner']=$_POST['owner'];
+					if($validate_array['label']!=$_POST['label']) $data['label']=$_POST['label'];
+					if($validate_array['state']!=$_POST['state']) $data['state']=$_POST['state'];
+					$data['pid'] = urldecode($pid);
+					#send PUT request
+					$result_array = $this->XMLObject->modifyObjectFedora($data);
+					#set success/error message
+					if($result_array['http_code'] == '200'){
+						$this->Session->setFlash('Object '.$pid.' modified.', 'default', array('class' => 'success'));
+					}else{
+						$this->Session->setFlash('Object '.$pid.' not modified.');	
+						$this->set('response', $result_array['response']);
+					}		
+				}
+			}catch (XmlException $e) {
+	    		throw new InternalErrorException();
+			}
+		}
+		
+		#set view variables
+		try{
+			$result_objects = $this->XMLObject->getObjectXML($pid);
+			$result_datastreams = $this->XMLObject->getDatastreamsXML($pid);
+			if($result_objects['http_code'] != '200' || $result_datastreams['http_code'] != '200'){	
+				if($result_objects['http_code'] == '401'){
+					$this->Session->setFlash(__('Access denied, Object state may be inactive'));
+				}else{
+					$this->Session->setFlash(__('Error requesting object, Code:'.$result_objects['http_code'].'/'.$result_datastreams['http_code']));
+					$this->set('response', $result_objects[response].'</br>'.$result_datastreams['response']);
+				}
+				# $this->Session->setFlash(__('code:'.$result_objects['http_code']. ' response:'.$result_objects['response']));
+				$this->redirect(array('action' => 'modify'));
+			}
+			
+			$xmlObject = Xml::build($result_objects['response']); // Here will throw a Exception
+			#$xmlObject = Xml::build($this->XMLObject->getObjectXML(urldecode($pid))); // Here will throw a Exception
+			#print_r($xmlObject);	
+			$this->set('id', $pid);
+			$this->set('label', $xmlObject->objLabel);
+			$this->set('owner', $xmlObject->objOwnerId);
+			$this->set('state', $xmlObject->objState);
+			
+			$xmlDatastreams = Xml::build($result_datastreams['response']);
+			$this->set('datastreams', $xmlDatastreams[0]->datastream);
+			#print_r($xmlDatastreams);
+		}		
+		catch (XmlException $e) {
+	    	throw new InternalErrorException();
+		}	
+	}
+	public function deleteDatastream($pid = null, $dsid = null){
+		if($dsid != null && $pid != null){
+			
+			$answer = $this->XMLObject->purgeDatastream($pid,$dsid);
+			if($answer['http_code']=='200'){
+<<<<<<< HEAD
+                if(strpos($pid,'TEI-header' ===0))
+                    $this->XMLObject->indexLatestVersion($pid);
+                    $this->XMLObject->deleteAllHandlePID($pid,$dsid);
+                    $this->Session->setFlash('Datastream "'.$dsid.'" purged.', 'default', array('class' => 'success'));
+                    $this->redirect(array('action' => 'modifyObject',$pid));
+=======
+				$this->Session->setFlash('Object '.$pid.'\'s datastream '.$dsid.' purged.', 'default', array('class' => 'success'));
+				$this->redirect(array('action' => 'modifyObject',$pid));
+>>>>>>> origin/zielkede
+			}else{
+				$this->Session->setFlash('Datastream not purged, Code'.$answer['http_code']=='200');
+				$this->redirect(array('action' => 'modifyObject',$pid));
+			}
+		}else{
+			$this->Session->setFlash('No valid object/datastream');
+			$this->redirect(array('action' => 'modifyObject',$pid));
+		}
+	}
+
+    private function javaXSLT($sXmlFile){
+        require_once("/var/www/repository/lib/Java.inc");
+        chmod($sXmlFile, 0755);
+        //move_uploaded_file($sXmlFile, $_SERVER['DOCUMENT_ROOT']."/indexUploads/".basename($_FILES['teifile']['tmp_name']));
+        //$sXmlFile = $_SERVER['DOCUMENT_ROOT']."/indexUploads/".basename($_FILES['teifile']['tmp_name']);
+        
+        $sXslFile = $_SERVER['DOCUMENT_ROOT']."/xsltjson/conf/xml-to-json-modified.xsl";
+        //$sXmlFile = $_SERVER['DOCUMENT_ROOT']."/CorpusRidgesV1_test.xml";
+        try{
+            $oXslSource = new java("javax.xml.transform.stream.StreamSource", "file://".$sXslFile);
+            $oXmlSource = new java("javax.xml.transform.stream.StreamSource", "file://".$sXmlFile);
+            
+            $oFeatureKeys = new JavaClass("net.sf.saxon.FeatureKeys");
+            
+            //Create the Factory
+            $oTransformerFactory = new java("net.sf.saxon.TransformerFactoryImpl");
+            
+            //Disable source document validation
+            $oTransformerFactory->setAttribute($oFeatureKeys->SCHEMA_VALIDATION, 4);
+            
+            //Create a new Transformer
+            $oTransFormer = $oTransformerFactory->newTransformer($oXslSource);
+            
+            //Create a StreamResult to store the output
+            $oResultStringWriter = new java("java.io.StringWriter");
+            $oResultStream = new java("javax.xml.transform.stream.StreamResult", $oResultStringWriter);
+            
+            //Transform
+            $oTransFormer->transform($oXmlSource, $oResultStream);
+            //unbind($sXmlFile)
+            //Echo the output from the transformation
+            //echo java_cast($oResultStringWriter->toString(), "string");
+            return java_cast($oResultStringWriter->toString(), "string");
+           
+        }catch(JavaException $e){
+            echo java_cast($e->getCause()->toString(), "string");
+            exit;
+        } 
+    }
+    
+    public function ajaxUpload($mode = null){
+        $this->autoRender = false;
+
+
+        //var_dump($this->Session->read('Auth.User'));
+        $folder = 'tmp/'.$this->Session->read('Auth.User.username') . $this->Session->read('Auth.User.id');
+        $view = new View($this);
+        $html = $view->loadHelper('Html');
+
+        if(isset($_POST['id']) && isset($_FILES['teifile']) && $mode == null){
+            $sXmlFile = file_get_contents($_FILES['teifile']['tmp_name']);
+            $teiXML = Xml::build($sXmlFile);
+            $response = '';
+            $response = $this->XMLObject->makeValidationFiles($teiXML,$folder);
+            $response .= $this->XMLObject->validateTeiCorpusHeader($folder);
+            if($response == 'valid'){
+               echo  "<b>Corpus  </b>". $html->image('validUpload.png', array('width' => '17px','alt' => 'valid'));
+            }else{
+                echo "<b>Corpus  </b>".$html->image('invalidUpload.png', array('width' => '17px','alt' => 'invalid')).$response."<br/>";
+            }
+           /*if($response = $this->XMLObject->validateTeiHeader($teiXML)){
+                foreach($response as $key => $value){
+                    if($value == 'valid'){
+                       echo   "<b>".$key."  </b>". $html->image('validUpload.png', array('width' => '17px','alt' => 'valid'))."</br>";
+                    }else{
+
+                        echo "<b>".$key."  </b>".$html->image('invalidUpload.png', array('width' => '17px','alt' => 'invalid'))."<br/>Error: ".$value.'</br>';
+                    }
+                }   
+            }else{
+                echo '</br>error in validation process';
+            }*/
+            /*$json = XMLObjectsController::javaXSLT($sXmlFile);
+            //$response = $this->XMLObject->validateIndexing($json,$_POST['id']);
+            //echo(print_r($response));
+            $return_array = $this->XMLObject->indexJson($json,$_POST['id']);
+            if($return_array['http_code']== 201){
+                echo "Object indexed.";
+                //$this->Session->setFlash('', 'default', array('class' => 'success'));
+            }else{
+                echo "Object not indexed:".$return_array['response'];
+            }*/
+        }elseif($mode != null){
+
+            if($mode == 'preps'){
+                $response = $this->XMLObject->validateTeiPreparationsHeader($folder);
+                if($response == 'valid'){
+                    echo  "<b>Preparations  </b>". $html->image('validUpload.png', array('width' => '17px','alt' => 'valid'));
+                }else{
+                    echo "<b>Preparations  </b>".$html->image('invalidUpload.png', array('width' => '17px','alt' => 'invalid'))."<br/>";
+                    foreach($response as $key => $value){
+                        echo 'Error in preparation '.$key.':'.$value.'<br/>';
+                    }
+                }
+            }
+            if($mode == 'docs'){
+                $response = $this->XMLObject->validateTeiDocumentHeader($folder);
+                if($response == 'valid'){
+                    echo  "<b>Documents  </b>". $html->image('validUpload.png', array('width' => '17px','alt' => 'valid'));
+                }else{
+                    echo "<b>Documents </b>".$html->image('invalidUpload.png', array('width' => '17px','alt' => 'invalid'))."<br/>";
+                    foreach($response as $key => $value){
+                        echo 'Error in document '.$key.':'.$value.'<br/>';
+                    }
+                }
+            }
+
+            //echo print_r($_FILES);
+            //echo 'Error:file or filename corrupt. ID:'.@$_POST['id'].' File:'.@$_FILES[0]['tmp_name'];
+        }
+       // echo '</br>validation complete';
+    }
+
+	public function import() {
+	    App::uses('Xml','Utility');
+		if(!empty($_POST)){
+		    $successmsg = "";
+		    if(isset($_POST['test'])){   
+		        if(isset($_FILES['teifile'])){
+                    $sXmlFile = '/tmp/'.basename($_FILES['teifile']['tmp_name']);
+                    $json = XMLObjectsController::javaXSLT($sXmlFile);
+                    $return_array = $this->XMLObject->indexJson($json,$_POST['id']);
+                    if($return_array['http_code']== 201){
+                        $successmsg = "Object indexed.";
+                        //$this->Session->setFlash('', 'default', array('class' => 'success'));
+                    }else{
+                        $successmsg = "Object not indexed.";
+                    };
+                }
+		    }
+			$files = @$_FILES ?: null;
+			$errormsg = $this->XMLObject->validateIngest($_POST,$files);
+			if($errormsg != ''){
+				 $this->Session->setFlash($errormsg); #
+			}else{
+				if(isset($files['teifile'])){
+                    #$this->XMLObject->foxmlToTei($files['teifile']);			
+					#debug($files['teifile']);
+				}
+				$formatname = @$_POST['formatname']?: null;
+				
+				$returnmsg = $this->XMLObject->ingestFedora($_POST['id'],$_POST['label'],$_FILES,$formatname,$this->Session->read('Auth.User.username'));
+				#set flashmessage
+				$error = false;
+                $response = '';
+				for($i=0;$i<count($returnmsg['http_code']);$i++){
+					if($returnmsg['http_code'][$i] != '201'){
+					    $error = true;	        
+                        if($i == 0){
+                            if($returnmsg['http_code'][$i] == '500'){
+                                $errormsg .= 'Object not created, PID already exists</br>';      
+                            }else{
+                                if(isset($returnmsg['response'][$i]))$response .= '</br>'.$returnmsg['response'][$i];
+                                $errormsg .= 'Object not created</br>';
+                            }
+                        }else{              
+                            $errormsg .= 'Upload '.($i+1).' failed</br>';
+                            if(isset($returnmsg['response'][$i]))$response .= '</br>'.$returnmsg['response'][$i];
+                        }				      
+					}   
+				}
+<<<<<<< HEAD
+                if(!$error) {
+                    if(isset($_FILES['teifile'])){
+                        $sXmlFile = '/tmp/'.basename($_FILES['teifile']['tmp_name']);
+                        $json = $this->XMLObject->javaXSLT($sXmlFile);
+
+                        $return_array = $this->XMLObject->indexJson($json,$_POST['id']);
+                        if($return_array['http_code']== 201){
+                            $successmsg .= "</br>Object indexed.";
+                            $return_array = $this->XMLObject->handle($_POST['id']);
+                        }else{
+                            $errormsg .= "</br>Object not indexed. Error:".$return_array['response'];
+                            $error = true;
+                        };
+                    }
+                }
+=======
+>>>>>>> origin/zielkede
+                if($error){
+                    $this->Session->setFlash($errormsg);
+                }else{
+                    $this->Session->setFlash('Object ingested. '.$successmsg, 'default', array('class' => 'success'));
+                    $this->set('ingestedObject',urlencode($_POST['id']));
+                }
+                if($response != '') $this->set('response',$response); 
+				
+			}
+		}
+	}
+	public function modifyDatastream($pid = null, $dsid = null){
+		App::uses('Xml','Utility');
+        if(!$permission = $this->permission($pid)){
+            $this->Session->setFlash(__('No permission to modify Corpus.'));
+            $this->redirect(array('action' => 'modify'));
+        }
+		if($pid != null && $pid != null){	
+			#check post data
+			if(isset($_POST) && !empty($_POST)){
+			   #get current properties
+			   try{
+                    $result = $this->XMLObject->getDatastream($pid,$dsid);
+                    if($result['http_code'] != '200'){
+                        $this->Session->setFlash(__('Error, Code:'.$result['http_code']));
+                        return;
+                    }           
+                    $xmlObject = Xml::build($result['response']); // Here will throw a Exception
+                    $validate_array['dsLabel']=(string)$xmlObject->dsLabel;
+                    $validate_array['dsMIME']=(string)$xmlObject->dsMIME;
+                    $validate_array['dsState']=(string)$xmlObject->dsState;
+                    $validate_array['dsVersionable']=(string)$xmlObject->dsVersionable;
+                }catch (XmlException $e) {
+                    throw new InternalErrorException();
+                }   
+                #change datastream properties
+			    if(isset($_POST['modDs'])){
+    			    #validate post data      
+                    $flashmsg = $this->XMLObject->validateModifyDatastream($_POST,$validate_array);
+                    if($flashmsg != ''){
+                        $this->Session->setFlash($flashmsg);
+                    }else{  
+                        #check for changes
+                        if($validate_array['dsLabel']!= $_POST['label']) $data['label']=$_POST['label'];
+                        if($validate_array['dsMIME']!= $_POST['mimeType']) $data['mimeType']=$_POST['mimeType'];
+                        if($validate_array['dsState']!= $_POST['state']) $data['state']=$_POST['state'];
+                        if($validate_array['dsVersionable']!= $_POST['versionable']) $data['versionable']=$_POST['versionable'];
+                        if(isset($data)){
+                            $data['dsid'] = $dsid;
+                            $data['pid'] = $pid;
+                            #set modify data
+                            $result_array = $this->XMLObject->modifyDatastreamFedora($data);
+                            if($result_array['http_code'] == '200'){
+                                $this->Session->setFlash('Datastream modified.', 'default', array('class' => 'success'));        
+                            }else{
+                                $this->Session->setFlash(__('Error, Code:'.$result['http_code']));
+                            }
+                        }
+                    }
+                #upload new version of datastream 
+			    }elseif(isset($_POST['uploadNewVersion']) && isset($_FILES) && $_FILES != ''){
+                    $parameter[0] = array(
+                        'dsLabel' => urlencode($validate_array['dsLabel']),
+                        'mimeType' => urlencode($validate_array['dsMIME']),
+                        'dsState' => $validate_array['dsState'],
+                        'versionable' => $validate_array['dsVersionable']  
+                    );
+                    #var_dump($parameter);
+			        #upload
+                    $result_array = $this->XMLObject->addDatastream($pid,$_FILES,array($dsid),$parameter);
+                    #auswertung
+                    if($result_array['http_code'] == '201'){
+                        $this->Session->setFlash('Datastream updated.', 'default', array('class' => 'success'));
+                    }else{
+                        $this->Session->setFlash('Error: Streams not added. Code:'.$result_array['http_code']);
+                        $this->set('error', $result_array['response']);
+                    }
+			    }
+			}				
+			#view variables
+			try{
+				$result = $this->XMLObject->getDatastream($pid,$dsid);
+				#var_dump($result['response']); 
+				if($result['http_code'] == '200'){
+					$this->set('dsid',$dsid);
+					$this->set('response',$result['response']);
+				}else{
+					$this->Session->setFlash(__('Error, Code:'.$result['http_code']));
+					$this->redirect($this->referer());
+				}
+			}catch (XmlException $e) {
+	    		throw new InternalErrorException();
+			}
+			$this->set('objectID',$pid);
+
+		}
+	}
+	public function addDatastream($pid = null){
+		App::uses('Xml','Utility');
+		#check id
+		if($pid != null) $pid = urldecode($pid);
+		if($pid == null && isset($_POST) && !empty($_POST)) $pid = $_POST['id'];
+		if($pid == null){
+			 $this->Session->setFlash(__('No valid ID'));
+			 $this->redirect($this->referer());
+		}else{
+			#check post
+			$flashmsg = '';
+			if(isset($_POST) && !empty($_POST) && isset($_FILES) && !empty($_FILES)){
+				#validierung	
+				$flashmsg = $this->XMLObject->validateAddDatastream($_POST,$_FILES['userfile']);
+				if($flashmsg != ''){
+					 $this->Session->setFlash($flashmsg); #
+				}else{
+					#upload
+					$result_array = $this->XMLObject->addDatastream($pid,$_FILES,$_POST['formatname']);
+					#auswertung
+					if($result_array['http_code'] == '201'){
+						$this->Session->setFlash('Datastream(s) added.', 'default', array('class' => 'success'));
+						$this->redirect(array('action' => 'modifyObject',$pid));
+					}else{
+						$this->Session->setFlash('Error: Streams not added. Code:'.$result_array['http_code']);
+						$this->set('response', $result_array['response']);
+					}					
+				}
+			}
+		
+			#view variables
+			try{
+				$result_objects = $this->XMLObject->getObjectXML($pid);
+				if($result_objects['http_code'] == '200'){
+					$xmlObject = Xml::build($result_objects['response']);
+					$this->set('id', $pid);
+					$this->set('label', $xmlObject->objLabel);
+				}else{
+					$this->Session->setFlash(__('Error, Code:'.$result_objects['http_code']));
+					$this->redirect($this->referer());
+				}
+			}catch (XmlException $e) {
+	    		throw new InternalErrorException();
+			}
+		}				
+	}
+
+<<<<<<< HEAD
+public function addTeiheader($id){
+    if(isset($_POST) && !empty($_POST) && isset($_POST['label']) && !empty($_POST['label'])){
+        var_dump($_POST);
+        $valid = false;
+        //validation
+        $folder = 'tmp/'.$this->Session->read('Auth.User.username') . $this->Session->read('Auth.User.id');
+        if(isset($_FILES['teifile'])){
+            $sXmlFile = file_get_contents($_FILES['teifile']['tmp_name']);
+            try{
+                $teiXML = Xml::build($sXmlFile);
+            }catch (XmlException $e){
+                $this->Session->setFlash(__("Fehler".$e));
+                return;
+            }
+            $this->XMLObject->makeValidationFiles($teiXML,$folder);
+            if(isset($_POST['scheme'])){
+                $scheme = $_POST['scheme'];
+            }else{
+                $scheme = null;
+            }
+            $response = $this->XMLObject->validateTeiCorpusHeader($folder,$scheme);
+            if($response == 'valid'){
+                $response = $this->XMLObject->validateTeiDocumentHeader($folder,$scheme);
+                if($response == 'valid'){
+                    $response = $this->XMLObject->validateTeiPreparationsHeader($folder,$scheme);
+                    if($response == 'valid'){
+                        $valid = true;
+                    }
+                }
+            }
+            $this->XMLObject->deleteValidationFolder($folder);
+        }
+        if($valid){
+            $error = '';
+            $returnmsg = $this->XMLObject->addTei($id,$_POST['label'],$_FILES['teifile']['tmp_name'],$scheme);
+            if($returnmsg['http_code'] != '201' && $returnmsg['http_code'] != '200'){
+                $error.=$returnmsg['response'].'</br>';
+            }else{
+                $return_array = $this->XMLObject->indexLatestVersion($id);
+                if($return_array['http_code']== 201){
+                    //$success .= "</br>Object indexed.";
+                    $return_array = $this->XMLObject->handle($id);
+                }else{
+                    $error .= "</br>Object not indexed. Error:".$return_array['response'];
+                }
+            }
+            if($error == ''){
+                $this->Session->setFlash('TEI-header added.', 'default', array('class' => 'success'));
+               // $this->redirect(array('action' => 'modifyObject',$id));
+            }else{
+                $this->Session->setFlash(__($error));
+            }
+            //$this->redirect($this->referer());
+        }else{
+            $this->Session->setFlash(__('TEI-header invalid.'));
+        }
+    }
+    $schemeList = glob(WWW_ROOT.'schemes/*',GLOB_ONLYDIR);
+    $schemeList = str_replace(WWW_ROOT.'schemes/','',$schemeList);
+    if(isset($schemeList) && !empty($schemeList)){
+        $this->set('schemes',$schemeList);
+    }else{
+        $this->set('schemes','');
+    }
+    $conf = Configure::read('SchemeConfig');
+    $this->set('activeScheme',$conf['current_scheme']);
+
+    $this->set('id',$id);
+}
+
+=======
+>>>>>>> origin/zielkede
+
+public function downloadTei($pid){
+    #$this->autoRender = false;
+    $path='http://depot1-7.cms.hu-berlin.de:8080/fedora/objects/'.$pid.'/datastreams/TEI_header/content';
+    
+    $resonse_array = $this->XMLObjects->getObjectTEIXml($pid);
+    if($resonse_array['http_code'] == '200'){
+        $this->viewClass = 'Media';
+        $params = array(
+            #'id'        => 'tei-header-'.urldecode($pid).'.xml',
+            'name'      => 'tei-header-'.urldecode($pid),
+            'extension' => 'xml',
+            'path'      => APP . $path, # <---------------------
+            'download'  => true
+            
+        );
+        $this->set($params);
+    }
+    
+    
+    #ab cakephp 2.3 -> $this->response->file($file["path"], array('download' => true, 'name' => 'tei-header-'.urldecode($pid)));
+<<<<<<< HEAD
+}
+
+    public function downloadDatastream($pid,$dsid){
+        $this->autoRender=false;
+        try{
+            $result = $this->XMLObject->getDatastream($pid,$dsid);
+            if($result['http_code'] != '200'){
+                $this->Session->setFlash(__('Error, Code:'.$result['http_code']));
+                return;
+            }
+            $xmlObject = Xml::build($result['response']); // Here will throw a Exception
+            $file_name=(string)$xmlObject->dsLabel;
+            if(strpos($dsid,"TEI-header") === 0){ //&& strpos($file_name,".xml") === false
+                $file_name = $dsid.".xml";
+            }
+            $mime =(string)$xmlObject->dsMIME;
+            //var_dump($xmlObject);
+        }catch (XmlException $e) {
+            throw new InternalErrorException();
+        }
+       $this->response->header(array(
+            "Content-Disposition: attachment; filename=\"$file_name\"",
+            "Pragma: public",
+            "Cache-Control: must-revalidate",
+            "post-check"=>"0",
+            "pre-check"=>"0"
+        ));
+        $this->response->type($mime);
+        $url[] = "http://141.20.4.72:8080/fedora/objects/".$pid."/datastreams/".$dsid."/content";
+        $response = @call_user_func_array('file_get_contents', $url);
+        //$this->response->file($response)
+        return $response;
+    }
+
+    public function uploadNewTeiVersion($pid,$dsid){
+        try{
+            $result = $this->XMLObject->getDatastream($pid,$dsid);
+            if($result['http_code'] != '200'){
+                $this->Session->setFlash(__('Error, Code:'.$result['http_code']));
+                return;
+            }
+            $xmlObject = Xml::build($result['response']); // Here will throw a Exception
+            $dslabel=(string)$xmlObject->dsLabel;
+        }catch (XmlException $e) {
+            throw new InternalErrorException();
+        }
+        $this->set("id",$pid);
+        $this->set("dsid",$dsid);
+        $this->set("dslabel",$dslabel);
+        $schemeList = glob(WWW_ROOT.'schemes/*',GLOB_ONLYDIR);
+        $schemeList = str_replace(WWW_ROOT.'schemes/','',$schemeList);
+        if(isset($schemeList) && !empty($schemeList)){
+            $this->set('schemes',$schemeList);
+        }else{
+            $this->set('schemes','');
+        }
+
+        if(!empty($_POST)){
+            if(isset($_FILES) && $_FILES['teifile']['size'] != 0){
+                $valid = false;
+                //validation
+                $folder = 'tmp/'.$this->Session->read('Auth.User.username') . $this->Session->read('Auth.User.id');
+                if(isset($_FILES['teifile'])){
+                    $sXmlFile = file_get_contents($_FILES['teifile']['tmp_name']);
+                    $teiXML = Xml::build($sXmlFile);
+                    $this->XMLObject->makeValidationFiles($teiXML,$folder);
+                    $response = $this->XMLObject->validateTeiCorpusHeader($folder);
+                    if($response == 'valid'){
+                        $response = $this->XMLObject->validateTeiDocumentHeader($folder);
+                        if($response == 'valid'){
+                            $response = $this->XMLObject->validateTeiPreparationsHeader($folder);
+                            if($response == 'valid'){
+                                $valid = true;
+                            }
+                        }
+                    }
+                    $this->XMLObject->deleteValidationFolder($folder);
+                }
+                if($valid){
+                    $response = $this->XMLObject->addDatastream($pid,$_FILES['teifile']['tmp_name'],urlencode($dsid),urlencode($dslabel));
+                    if($response['http_code'] == 201){
+                        $this->Session->setFlash('TEI-header updated.', 'default', array('class' => 'success'));
+                        $this->XMLObject->indexLatestVersion($pid);
+                        $this->XMLObject->handle($pid);
+                    }else{
+                        $this->Session->setFlash('TEI-header not updated.');
+                    }
+                }else{
+                    $this->Session->setFlash('TEI-header invalid.');
+                }
+            }else{
+                $this->Session->setFlash('No file selected.');
+            }
+        }
+    }
+
+    public function uploadNewVersion($pid,$dsid){
+        try{
+            $result = $this->XMLObject->getDatastream($pid,$dsid);
+            if($result['http_code'] != '200'){
+                $this->Session->setFlash(__('Error, Code:'.$result['http_code']));
+                return;
+            }
+            $xmlObject = Xml::build($result['response']); // Here will throw a Exception
+            $dslabel=(string)$xmlObject->dsLabel;
+        }catch (XmlException $e) {
+            throw new InternalErrorException();
+        }
+        $this->set("id",$pid);
+        $this->set("dsid",$dsid);
+        $this->set("dslabel",$dslabel);
+        if(!empty($_POST)){
+            if(isset($_FILES)){
+                $response = $this->XMLObject->addDatastream($pid,$_FILES['uploadfile']['tmp_name'],urlencode($dsid),urlencode($_FILES['uploadfile']['name']));
+                if($response['http_code'] == 201){
+                    $this->Session->setFlash('Datastream updated.', 'default', array('class' => 'success'));
+                }else{
+                    $this->Session->setFlash('Datastream not updated.');
+                }
+            }else{
+                $this->Session->setFlash('No file selected.');
+            }
+        }
+    }
+
+    public function dsVersionHistory($pid, $dsid){
+        if(isset($_POST) && !empty($_POST) ){
+            if(strpos($_POST['pid'],'TEI-header') === 0){
+                $result_array = $this->XMLObject->purgeDatastreamVersionFedora($_POST['pid'],$_POST['dsID'],$_POST['date']);
+            }else{
+                $result_array = $this->XMLObject->deleteTeiVersion($_POST['pid'],$_POST['dsID'],$_POST['date']);
+            }
+            if($result_array['http_code'] == 200){
+                $this->Session->setFlash('Datastream purged.', 'default', array('class' => 'success'));
+            }else{
+                $this->Session->setFlash('Datastream not purged. Error: '.$result_array['response']);
+            }
+        }
+        try{
+            $result = $this->XMLObject->getDatastreamHistory($pid,$dsid);
+            if($result['http_code'] != '200'){
+                if($result['http_code'] == '404'){
+                    $this->Session->setFlash(__('Datastream no longer available.'));
+                }else{
+                    $this->Session->setFlash(__('Error: '.$result['response'].', Code:'.$result['http_code']));
+                }
+
+                $this->redirect(array('action' => 'modifyObject',$pid));
+            }
+            $xmlObject = Xml::build($result['response']); // Here will throw a Exception
+            //var_dump($xmlObject);
+        }catch (XmlException $e) {
+            throw new InternalErrorException();
+        }
+        $this->set('objectID',$pid);
+        $this->set('xml',$xmlObject);
+    }
+=======
+>>>>>>> origin/zielkede
+
+
+}
+
+    private function permission($pid,$owner = null){
+    	App::uses('Xml','Utility');
+		if($this->Session->read('Auth.User.group_id') == '1') return true;
+		if($pid == null) return false;
+		$user = $this->Session->read('Auth.User.username');
+		if($owner == null){
+			$result_array = $this->XMLObject->getObjectXML($pid);
+			if($result_array['response'] == null){
+				$this->Session->setFlash('ERROR CODE:'.$result_array['http_code']);	
+				return false;
+			}
+			$xml = Xml::build($result_array['response']);
+			if($xml->objOwnerId == $user){
+				return true;
+			}else{
+				return false;
+			}			
+		}else{
+			if($user == $owner){
+				return 'true';
+			}else{
+				return 'false';
+			}
+		}	
+	}
+}

@@ -1,0 +1,17 @@
+<ul>
+	<li><b>No Registration </b> is needed to use the view function of LAUDATIO-Repository.</li>
+	<li>The <b>TEI Header</b> provides the information for the view.</li>
+	<li>Every corpus has four sections: 'Corpus', 'Document', 'Annotation' and 'Preparation'. Click on the section of interest and navigate through the information.</li>
+
+	<b>Corpus</b><br>
+	This section contains general information about the corpus itself. You get information about the corpus editors and annotators, the corpus project, the documents of the corpus and the applied annotations and formats.<br>
+
+	<b>Document</b><br>
+	This section contains bibliographic information about each document in the corpus, e.g. author, date and publication place. Each document has a list of annotation.<br>
+
+	<b>Annotation</b><br>
+	This section contains the whole tagset for each annotation with descriptions.<br>
+
+	<b>Preparation</b><br>
+	This section contains information about each step of preparation for each annotation which is listed in the section 'annotation'. Here, the tools used for data preparation, checking methods and information about the overall corpus architecture are listed.<br>
+</ul>

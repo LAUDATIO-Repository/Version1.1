@@ -1,0 +1,83 @@
+<p><strong>Scheme 7</strong><br /><br /><strong> Creating your own metadata</strong></p>
+<ul>
+<ul>
+<li>Download the current version of the templates for each section of a corpus ('Corpus', 'Document' and 'Preparation').</li>
+<li>Fill in the required information:</li>
+</ul>
+</ul>
+<p><strong>'Corpus' - Template</strong></p>
+<ul>
+<ul>
+<ul>
+<li>For one corpus you only need one TEI XML file.</li>
+<li>Fill in the corpus creators, annotators, project descriptions, list of documents (with a short name) and the encodings for each format of your corpus.</li>
+<li>For every format there is one encodingDesc where you list all annotation keys and values of each format (there may be differences between the formats).</li>
+</ul>
+</ul>
+</ul>
+<p>For help, see other TEI XML files which are already uploaded in the LAUDATIO-Repository or the TEI ODD for the section of interest.</p>
+<p><strong>'Document' - Template</strong></p>
+<ul>
+<ul>
+<ul>
+<li>For each document you need one TEI XML file.</li>
+<li>Fill in all required information, e.g. author of the document, place and date.</li>
+<li>Every document has its own list of annotation (there may be differences between the documents).</li>
+</ul>
+</ul>
+</ul>
+<p>For help, see other TEI XML files which are already uploaded in the LAUDATIO-Repository or the TEI ODD for the section of interest.</p>
+<p><strong>'Preparation' - Template</strong></p>
+<ul>
+<ul>
+<ul>
+<li>For each annotation layer you need one TEI XML file independent on how the annotation was made. Note, that if one annotation layer, e.g. a part of speech annotation (pos) is applied in all formats of the corpus, one TEI XML file is sufficient for this annotation layer.</li>
+<li>Every TEI XML file contains the whole preparation history for one annotation layer, including the first annotation, converting processes and checking methods. For each preparation step and format there is one encodingDesc. For example: A first annotation is applied with the EXMARaLDA Editor and afterwards converted to relANNIS format. For the EXMARaLDA format there is one encodingDesc and for the relANNIS format another one where the tools, the checking methods and corpus architecture information such as segmentation is listed, too.</li>
+</ul>
+</ul>
+</ul>
+<p>For help, see other TEI XML files which are already uploaded in the LAUDATIO-Repository or the TEI ODD for the section of interest.</p>
+<ul>
+<ul>
+<li>Merge all TEI-Header with the teitool</li>
+<ul>
+<li>Build a folder structure as the following:</li>
+First order folder 'CorpusName'</ul>
+</ul>
+</ul>
+<p>&nbsp;</p>
+<ul>
+<ul>
+<ul>Second order folder 'CorpusHeader' = contains one TEI XML file for the corpus which is validated with the scheme for the section 'Corpus'.</ul>
+</ul>
+</ul>
+<p>&nbsp;</p>
+<ul>
+<ul>
+<ul>Second order folder 'DocumentHeader' = contains all TEI XML files for the documents which are validated with the scheme for the section 'Document'.</ul>
+</ul>
+</ul>
+<p>&nbsp;</p>
+<ul>
+<ul>
+<ul>Second order folder 'PreparationHeader' = contains all TEI XML files for the preparationSteps for each annotation which are validated with the scheme for the section 'Preparation'.</ul>
+</ul>
+</ul>
+<p>&nbsp;</p>
+<ul>
+<ul>
+<ul>Second order folder 'AllHeader' = contains nothing.</ul>
+</ul>
+</ul>
+<p>&nbsp;</p>
+<ul>
+<ul>
+<ul>
+<li>Run the teitool in you command line.</li>
+</ul>
+</ul>
+</ul>
+<p><a href="../repository/validation/teitool-0.2.jar">teitool 0.2</a></p>
+<ul>
+<li>Upload the merged TEI XML file into LAUDATIO-Repository.</li>
+</ul>

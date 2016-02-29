@@ -1,0 +1,10 @@
+<?php
+App::uses('AppController', 'Controller','Xml');
+
+//class TinymceController extends AppController {
+        //public $helpers = array('Tinymce');
+        public $helpers = array('TinyMCE.TinyMCE');
+
+        $this->helpers = array('TinyMCE.TinyMCE');
+//}
+?>

@@ -1,0 +1,18 @@
+<p><strong>Scheme 7<br /></strong></p>
+<p>The document is the customization of the TEI p5 scheme for the LAUDATIO-Repository. The metadata which will be uploaded for each corpus as a TEI XML file which will be validated against the scheme produced by the ODD. Note, that there are several versions of the LAUDATIO-ODD, we start here with scheme 6. We customize the ODD according to the needs for the repository and the user's perspectives. If you have feature request please contact us (<a href="mailto:laudatio-user@hu-berlin.de">laudatio-user@hu-berlin.de</a>)</p>
+<p><strong>TEI Scheme</strong></p>
+<table>
+<tbody>
+<tr>
+<td>
+<div class="download"><span style="text-decoration: underline;">Corpus</span> <br /> Download <a href="../repository/files/documentation/corpus/version7/teiODD_LAUDATIOCorpus_S7.zip">ODD</a><br /> Download <a href="../repository/files/documentation/corpus/version7/teiODD_LAUDATIOCorpus_Scheme7_RNG.zip">RNG Scheme</a><br /> Download <a href="../repository/files/documentation/corpus/version7/teiODD_LAUDATIOCorpus_Scheme7_RNC.zip">RNC Scheme</a><br /> Here is the presentation from the <br><a href="../repository/files/documentation/corpus/version7/teiODD_LAUDATIOCorpus_S7/document.html">Documentation</a></div>
+</td>
+<td>
+<div class="download"><span style="text-decoration: underline;">Document</span> <br /> Download <a href="../repository/files/documentation/document/version7/teiODD_LAUDATIODocument_Scheme7.zip">ODD</a><br /> Download <a href="../repository/files/documentation/document/version7/teiODD_LAUDATIODocument_Scheme7_RNG.zip">RNG Scheme</a><br /> Download <a href="../repository/files/documentation/document/version7/teiODD_LAUDATIODocument_Scheme7_RNC.zip">RNC Scheme</a><br /> Here is the presentation from the&nbsp; <br><a href="../repository/files/documentation/document/version7/teiODD_LAUDATIODocument_Scheme7/document.html">Documentation</a></div>
+</td>
+<td>
+<div class="download"><span style="text-decoration: underline;">Preparation</span> <br /> Download <a href="../repository/files/documentation/preparation/version7/teiODD_LAUDATIOPreparation_S7.zip">ODD</a><br /> Download <a href="../repository/files/documentation/preparation/version7/teiODD_LAUDATIOPreparation_Scheme7_RNG.zip">RNG Scheme</a><br /> Download <a href="../repository/files/documentation/preparation/version7/teiODD_LAUDATIOPreparation_Scheme7_RNC.zip">RNC Scheme</a><br /> Here is the presentation from the&nbsp; <a href="../repository/files/documentation/preparation/version7/teiODD_LAUDATIOPreparation_S7/document.html">Documentation</a></div>
+</td>
+</tr>
+</tbody>
+</table>

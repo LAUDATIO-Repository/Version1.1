@@ -1,0 +1,23 @@
+<p>oipipoipoi</p>
+<div id="cakeErr53cd2750598af-trace" class="cake-stack-trace" style="display: none;"><a>Code</a> <a>Context</a>
+<pre id="cakeErr53cd2750598af-code" class="cake-code-dump" style="display: none;"><code><span style="color: #000000;"><span style="color: #0000bb;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700;">}
+</span></span></code>
+<code><span style="color: #000000;"><span style="color: #0000bb;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #ff8000;">#check&nbsp;label
+</span></span></code>
+<span class="code-highlight"><code><span style="color: #000000;"><span style="color: #0000bb;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700;">if(</span><span style="color: #0000bb;">$post</span><span style="color: #007700;">[</span><span style="color: #dd0000;">'label'</span><span style="color: #007700;">]&nbsp;==&nbsp;</span><span style="color: #dd0000;">''</span><span style="color: #007700;">){
+</span></span></code></span></pre>
+<pre id="cakeErr53cd2750598af-context" class="cake-context" style="display: none;">$post = array(
+	'file' =&gt; 'import'
+)
+$files = null
+$out = 'Please enter ID'
+$ds = null
+$tei = null</pre>
+<pre class="stack-trace">XMLObject::validateIngest() - APP/Model/XMLObject.php, line 2056
+XMLObjectsController::import() - APP/Controller/XMLObjectsController.php, line 1214
+ReflectionMethod::invokeArgs() - [internal], line ??
+Controller::invokeAction() - CORE/Cake/Controller/Controller.php, line 490
+Dispatcher::_invoke() - CORE/Cake/Routing/Dispatcher.php, line 185
+Dispatcher::dispatch() - CORE/Cake/Routing/Dispatcher.php, line 160
+[main] - APP/webroot/index.php, line 92</pre>
+</div>

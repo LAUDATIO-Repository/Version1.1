@@ -1,0 +1,11 @@
+<IfModule mod_rewrite.c>
+	RewriteEngine on
+    
+	<Files "*.*">
+		Deny from all
+	</Files>
+
+	<FilesMatch "\.(zip)$">
+		Allow from all
+	</FilesMatch>
+</IfModule>

@@ -1,0 +1,399 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<teiCorpus xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader type="CorpusHeader">
+    <fileDesc>
+      <titleStmt>
+        <title type="Corpus">NA</title>
+        <editor role="CorpusEditor" n="1">
+          <persName>
+            <forename>NA</forename>
+            <surname>NA</surname>
+          </persName>
+          <affiliation>
+            <orgName type="Department">NA</orgName>
+            <orgName type="Institution">NA</orgName>
+          </affiliation>
+        </editor>
+        <editor role="CorpusEditor" n="2">
+          <persName>
+            <forename>NA</forename>
+            <surname>NA</surname>
+          </persName>
+          <affiliation>
+            <orgName type="Department">NA</orgName>
+            <orgName type="Institution">NA</orgName>
+          </affiliation>
+        </editor>
+        <author role="Annotator" n="1">
+          <persName>
+            <forename>NA</forename>
+            <surname>NA</surname>
+          </persName>
+          <affiliation>
+            <orgName type="Department">NA</orgName>
+            <orgName type="Institution">NA</orgName>
+          </affiliation>
+        </author>
+        <author role="Infrastructure" n="2">
+          <persName>
+            <forename>NA</forename>
+            <surname>NA</surname>
+          </persName>
+          <affiliation>
+            <orgName type="Department">NA</orgName>
+            <orgName type="Institution">NA</orgName>
+          </affiliation>
+        </author>
+        <author role="Transcription" n="3">
+          <persName>
+            <forename>NA</forename>
+            <surname>NA</surname>
+          </persName>
+          <affiliation>
+            <orgName type="Department">NA</orgName>
+            <orgName type="Institution">NA</orgName>
+          </affiliation>
+        </author>
+      </titleStmt>
+      <extent type="Tokens">NA</extent>
+      <publicationStmt>
+        <authority>NA</authority>
+        <idno>NA</idno>
+        <availability status="free">
+          <p>NA</p>
+        </availability>
+        <date when="2013" type="CorpusRelease">NA</date>
+      </publicationStmt>
+      <sourceDesc>
+        <list type="CorpusDocument">
+          <item n="1" corresp="NA" />
+          <item n="2" corresp="NA" />
+          <item n="3" corresp="NA" />
+        </list>
+      </sourceDesc>
+    </fileDesc>
+    <profileDesc>
+      <langUsage>
+        <language ident="NA" style="Language">NA</language>
+        <language ident="NA" style="LanguageArea">NA</language>
+        <language ident="NA" style="LanguageType">NA</language>
+      </langUsage>
+    </profileDesc>
+    <encodingDesc n="1">
+      <appInfo>
+        <application ident="NA" version="1">
+          <label>NA</label>
+        </application>
+      </appInfo>
+      <projectDesc>
+        <p>
+          <ref target="NA" />
+          NA
+        </p>
+      </projectDesc>
+      <editorialDecl>
+        <segmentation>
+          <p>NA</p>
+        </segmentation>
+        <normalization>
+          <p>NA</p>
+        </normalization>
+      </editorialDecl>
+      <tagsDecl>
+        <namespace name="NA" rend="Graphical" xml:id="Linebreak">
+          <tagUsage gi="NA">NA</tagUsage>
+        </namespace>
+        <namespace name="NA" rend="Lexical" xml:id="NA">
+          <tagUsage gi="NA">NA</tagUsage>
+        </namespace>
+        <namespace name="NA" rend="Other" xml:id="Other">
+          <tagUsage gi="NA">NA</tagUsage>
+        </namespace>
+        <namespace name="NA" rend="Syntactical" xml:id="Syntax">
+          <tagUsage gi="NA">NA</tagUsage>
+          <tagUsage gi="NA">NA</tagUsage>
+          <tagUsage gi="NA">NA</tagUsage>
+        </namespace>
+        <namespace name="morph" rend="Morphological" xml:id="morph">
+          <tagUsage gi="NA">NA</tagUsage>
+          <tagUsage gi="NA">NA</tagUsage>
+          <tagUsage gi="NA">NA</tagUsage>
+        </namespace>
+        <namespace name="META" rend="Meta" xml:id="META">
+          <tagUsage gi="NA">NA</tagUsage>
+          <tagUsage gi="NA">NA</tagUsage>
+          <tagUsage gi="NA">NA</tagUsage>
+        </namespace>
+      </tagsDecl>
+    </encodingDesc>
+    <encodingDesc n="2">
+      <appInfo>
+        <application ident="NA" version="1">
+          <label>NA</label>
+        </application>
+      </appInfo>
+      <projectDesc>
+        <p>
+          <ref target="NA" />
+          NA
+        </p>
+      </projectDesc>
+      <editorialDecl>
+        <segmentation>
+          <p>NA</p>
+        </segmentation>
+        <normalization>
+          <p>NA</p>
+        </normalization>
+      </editorialDecl>
+      <tagsDecl>
+        <namespace name="Linebreak" rend="Graphical" corresp="Linebreak">
+          <tagUsage gi="NA">NA</tagUsage>
+        </namespace>
+        <namespace name="lb" rend="MarkUp" xml:id="lb">
+          <tagUsage gi="NA">NA</tagUsage>
+        </namespace>
+        <namespace name="@Other" rend="Other" corresp="Other">
+          <tagUsage gi="NA">NA</tagUsage>
+        </namespace>
+        <namespace name="Syntax" rend="Syntactical" corresp="Syntax">
+          <tagUsage gi="NA">NA</tagUsage>
+          <tagUsage gi="NA">NA</tagUsage>
+          <tagUsage gi="NA">NA</tagUsage>
+        </namespace>
+      </tagsDecl>
+    </encodingDesc>
+    <revisionDesc>
+      <change n="1.0" when="2013" who="NA" type="NA">NA</change>
+      <change n="2.0" when="2015" who="NA" type="NA">NA</change>
+    </revisionDesc>
+  </teiHeader>
+  <teiCorpus>
+    <teiHeader type="DocumentHeader" style="NA">
+      <fileDesc xml:id="NA">
+        <titleStmt>
+          <title>NA</title>
+          <author>
+            <forename>NA</forename>
+            <surname>NA</surname>
+          </author>
+          <editor>
+            <forename>NA</forename>
+            <surname>NA</surname>
+          </editor>
+        </titleStmt>
+        <extent type="Tokens">NA</extent>
+        <publicationStmt>
+          <pubPlace>NA</pubPlace>
+          <publisher>NA</publisher>
+          <date when="2013">NA</date>
+          <biblScope>NA</biblScope>
+        </publicationStmt>
+        <seriesStmt>
+          <title>NA</title>
+          <editor>NA</editor>
+          <biblScope unit="volume">NA</biblScope>
+        </seriesStmt>
+        <sourceDesc n="1">
+          <msDesc>
+            <msIdentifier>
+              <msName>Cod. XYZ</msName>
+              <altIdentifier>
+                <repository>NA</repository>
+                <collection>NA</collection>
+                <idno>NA</idno>
+              </altIdentifier>
+            </msIdentifier>
+            <history>
+              <origin>
+                <objectType>NA</objectType>
+                <origDate precision="medium" notAfter-custom="999" notBefore-custom="1100">NA</origDate>
+                <origPlace>NA</origPlace>
+                <title>NA</title>
+                <locus />
+              </origin>
+            </history>
+          </msDesc>
+          <recordHist>
+            <source facs="http">
+              <ref target="http">NA</ref>
+            </source>
+          </recordHist>
+        </sourceDesc>
+      </fileDesc>
+      <profileDesc>
+        <langUsage>
+          <language ident="NA" style="Language">NA</language>
+          <language ident="NA" style="LanguageArea">NA</language>
+        </langUsage>
+      </profileDesc>
+      <encodingDesc>
+        <schemaSpec ident="AnnotationKey">
+          <elementSpec ident="Meta">
+            <valList>
+              <valItem ident="NA" corresp="NA" />
+              <valItem ident="NA" corresp="NA" />
+            </valList>
+          </elementSpec>
+          <elementSpec ident="Morphological">
+            <valList>
+              <valItem ident="NA" corresp="NA" />
+              <valItem ident="NA" corresp="NA" />
+            </valList>
+          </elementSpec>
+          <elementSpec ident="Syntactical">
+            <valList>
+              <valItem ident="NA" corresp="NA" />
+              <valItem ident="NA" corresp="NA" />
+            </valList>
+          </elementSpec>
+          <elementSpec ident="Lexical">
+            <valList>
+              <valItem ident="NA" corresp="NA" />
+            </valList>
+          </elementSpec>
+          <elementSpec ident="Transcription">
+            <valList>
+              <valItem ident="NA" corresp="NA" />
+              <valItem ident="NA" corresp="NA" />
+              <valItem ident="NA" corresp="NA" />
+            </valList>
+          </elementSpec>
+        </schemaSpec>
+      </encodingDesc>
+      <revisionDesc>
+        <change n="1.0" when="2013" who="NA">NA</change>
+      </revisionDesc>
+    </teiHeader>
+    <teiCorpus>
+      <teiHeader type="PreparationHeader">
+        <fileDesc>
+          <titleStmt>
+            <title type="AnnotationKey" corresp="name of annotation">name of annotation</title>
+            <editor role="CorpusEditor" n="1">
+              <persName>
+                <forename>NA</forename>
+                <surname>NA</surname>
+              </persName>
+              <affiliation>
+                <orgName type="Department">NA</orgName>
+                <orgName type="Institution">NA</orgName>
+              </affiliation>
+            </editor>
+            <editor role="CorpusEditor" n="2">
+              <persName>
+                <forename>NA</forename>
+                <surname>NA</surname>
+              </persName>
+              <affiliation>
+                <orgName type="Department">NA</orgName>
+                <orgName type="Institution">NA</orgName>
+              </affiliation>
+            </editor>
+            <author role="Annotator" n="1">
+              <persName>
+                <forename>NA</forename>
+                <surname>NA</surname>
+              </persName>
+              <affiliation>
+                <orgName type="Department">NA</orgName>
+                <orgName type="Institution">NA</orgName>
+              </affiliation>
+            </author>
+            <author role="Infrastructure" n="2">
+              <persName>
+                <forename>NA</forename>
+                <surname>NA</surname>
+              </persName>
+              <affiliation>
+                <orgName type="Department">NA</orgName>
+                <orgName type="Institution">NA</orgName>
+              </affiliation>
+            </author>
+            <author role="Transcription" n="2">
+              <persName>
+                <forename>NA</forename>
+                <surname>NA</surname>
+              </persName>
+              <affiliation>
+                <orgName type="Department">NA</orgName>
+                <orgName type="Institution">NA</orgName>
+              </affiliation>
+            </author>
+          </titleStmt>
+          <extent type="Tokens">NA</extent>
+          <publicationStmt>
+            <date type="AnnotationRelease" when="2013">NA</date>
+          </publicationStmt>
+          <sourceDesc>
+            <p>
+              <ref target="URL" />
+              NA
+            </p>
+          </sourceDesc>
+        </fileDesc>
+        <encodingDesc n="1" style="NA">
+          <appInfo n="1" style="Manual">
+            <application ident="NA" style="NA" version="1" type="Graphical" subtype="NA">
+              <label>NA</label>
+              <p>NA</p>
+            </application>
+          </appInfo>
+          <editorialDecl>
+            <segmentation style="Independent" corresp="NA">
+              <p>NA</p>
+            </segmentation>
+            <normalization method="None">
+              <p>NA</p>
+            </normalization>
+            <correction status="low" method="manual">
+              <p>NA</p>
+            </correction>
+            <p>NA</p>
+          </editorialDecl>
+          <projectDesc>
+            <p>
+              <ref target="URL" />
+              NA
+            </p>
+          </projectDesc>
+        </encodingDesc>
+        <encodingDesc n="2" style="NA">
+          <appInfo n="1" style="Semi-automatic">
+            <application ident="NA" style="NA" version="1" type="NA" subtype="NA">
+              <label>NA</label>
+              <p>NA</p>
+            </application>
+          </appInfo>
+          <appInfo n="2" style="Automatic">
+            <application ident="NA" style="NA" version="1" type="NA" subtype="NA">
+              <label>NA</label>
+              <p>NA</p>
+            </application>
+          </appInfo>
+          <editorialDecl>
+            <segmentation style="Dependent" corresp="NA">
+              <p>NA</p>
+            </segmentation>
+            <normalization method="None">
+              <p>NA</p>
+            </normalization>
+            <correction status="low" method="manual">
+              <p>NA</p>
+            </correction>
+            <p>NA</p>
+          </editorialDecl>
+          <projectDesc>
+            <p>
+              <ref target="URL" />
+              NA
+            </p>
+          </projectDesc>
+        </encodingDesc>
+        <revisionDesc>
+          <change n="1" when="2013" who="NA">NA</change>
+        </revisionDesc>
+      </teiHeader>
+    </teiCorpus>
+  </teiCorpus>
+</teiCorpus>

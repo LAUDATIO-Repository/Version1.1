@@ -1,0 +1,15 @@
+<ul>
+<li><strong>No Registration </strong> is needed to use the search function of LAUDATIO-Repository...ghghjg</li>
+<li>You can use the <strong>faceted search and/or the full-text search</strong> to retrieve information about all corpora in the LAUDATIO-Repository.</li>
+<li>The faceted search will filter all hits (of all available corpora in the LAUDATIO-Repository). For example: If you select the facet 'Formats' and check on 'exmaralda', you will only get the corpora which have EXMARaLDA as a format. The activated facet will be displayed above the hits. You can use more than one facet for your search.</li>
+<li>The full-text search has several options.</li>
+<ul>
+<li>Partial match - The lucene-based Full-Text Search supports partial matches e.g. without mutated vowel: 'Maerchen' The result from search-request is for e.g. 'Maerchen' or 'M&auml;rchen'.</li>
+<li>Exact match - The lucene-based Full-Text Search supports exact matches e.g. with mutated vowel: 'M&auml;rchen'.</li>
+<li>Fuzzy match - The lucene-based Full-Text Search supports fuzzy searches based on the Levenshtein Distance, or Edit Distance algorithm.</li>
+<li>Match all</li>
+<li>Match any</li>
+<li>You can choose between these options to get the best results for your search.</li>
+</ul>
+<li>You can combine faceted search and full-text search. For example, choose the facet 'Formats' and a value, e.g. 'EXMARaLDA' and add a text in the input box, e.g. 'Herbology' and will only get hits where all criteria are true.</li>
+</ul>

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="http://korpling.german.hu-berlin.de/schemata/laudatio/teiODD_LAUDATIOPreparation_Scheme7.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+    <teiHeader type="PreparationHeader">
+        <fileDesc>
+            <titleStmt>
+                <title type="AnnotationKey" corresp="name of annotation">name of annotation</title>
+                <editor role="CorpusEditor" n="1">
+                    <persName>
+                        <forename>NA</forename>
+                        <surname>NA</surname>
+                    </persName>
+                    <affiliation>
+                        <orgName type="Department">NA</orgName>
+                        <orgName type="Institution">NA</orgName>
+                    </affiliation>
+                </editor>
+                <editor role="CorpusEditor" n="2">
+                    <persName>
+                        <forename>NA</forename>
+                        <surname>NA</surname>
+                    </persName>
+                    <affiliation>
+                        <orgName type="Department">NA</orgName>
+                        <orgName type="Institution">NA</orgName>
+                    </affiliation>
+                </editor>
+                <author role="Annotator" n="1">
+                    <persName>
+                        <forename>NA</forename>
+                        <surname>NA</surname>
+                    </persName>
+                    <affiliation>
+                        <orgName type="Department">NA</orgName>
+                        <orgName type="Institution">NA</orgName>
+                    </affiliation>
+                </author>
+                <author role="Infrastructure" n="2">
+                    <persName>
+                        <forename>NA</forename>
+                        <surname>NA</surname>
+                    </persName>
+                    <affiliation>
+                        <orgName type="Department">NA</orgName>
+                        <orgName type="Institution">NA</orgName>
+                    </affiliation>
+                </author>
+                <author role="Transcription" n="2">
+                    <persName>
+                        <forename>NA</forename>
+                        <surname>NA</surname>
+                    </persName>
+                    <affiliation>
+                        <orgName type="Department">NA</orgName>
+                        <orgName type="Institution">NA</orgName>
+                    </affiliation>
+                </author>
+            </titleStmt>
+            <extent type="Tokens">NA</extent>
+            <publicationStmt>
+                <date type="AnnotationRelease" when="2013">NA</date>
+            </publicationStmt>
+            <sourceDesc>
+                <p><ref target="URL"/>NA</p>
+            </sourceDesc>
+        </fileDesc>
+        <encodingDesc n="1" style="NA">
+            <appInfo n="1" style="Manual">
+                <application ident="NA" style="NA" version="1" type="Graphical"
+                    subtype="NA">
+                    <label>NA</label>
+                    <p>NA</p>
+                </application>
+            </appInfo>
+            <editorialDecl>
+                <segmentation style="Independent" corresp="NA">
+                    <p>NA</p>
+                </segmentation>
+                <normalization method="None">
+                    <p>NA</p>
+                </normalization>
+                <correction status="low" method="manual">
+                    <p>NA</p>
+                </correction>
+                <p>NA</p>
+            </editorialDecl>
+            <projectDesc>
+                <p><ref target="URL"/>NA</p>
+            </projectDesc>
+        </encodingDesc>
+        <encodingDesc n="2" style="NA">
+            <appInfo n="1" style="Semi-automatic">
+                <application ident="NA" style="NA" version="1" type="NA"
+                    subtype="NA">
+                    <label>NA</label>
+                    <p>NA</p>
+                </application>
+            </appInfo>
+            <appInfo n="2" style="Automatic">
+                <application ident="NA" style="NA" version="1" type="NA"
+                    subtype="NA">
+                    <label>NA</label>
+                    <p>NA</p>
+                </application>
+            </appInfo>
+            <editorialDecl>
+                <segmentation style="Dependent" corresp="NA">
+                    <p>NA</p>
+                </segmentation>
+                <normalization method="None">
+                    <p>NA</p>
+                </normalization>
+                <correction status="low" method="manual">
+                    <p>NA</p>
+                </correction>
+                <p>NA</p>
+            </editorialDecl>
+            <projectDesc>
+                <p><ref target="URL"/>NA</p>
+            </projectDesc>
+        </encodingDesc>
+        <revisionDesc>
+            <change n="1" when="2013" who="NA">NA</change>
+        </revisionDesc>
+    </teiHeader>
+    <text/>
+</TEI>

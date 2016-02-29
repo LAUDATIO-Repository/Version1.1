@@ -1,0 +1,37 @@
+<div>
+<table>
+<tbody>
+<tr>
+<td><strong>Prof. Dr. phil. Anke L&uuml;deling</strong><br /> <span style="text-decoration: underline;">Visiting Address:</span>
+<p>Dorotheenstra&szlig;e 24, Raum 3.342, 10117 Berlin - Mitte</p>
+<span style="text-decoration: underline;">Postal Address:</span>
+<p><a href="https://www.linguistik.hu-berlin.de/" target="_blank">Institut f&uuml;r deutsche Sprache und Linguistik</a>,&nbsp;<a href="http://fakultaeten.hu-berlin.de/philfak2/" target="_blank">Philosophische Fakult&auml;t II</a><br /> Humboldt-Universit&auml;t zu Berlin<br /> Unter den Linden 6, D-10099 Berlin</p>
+<span style="text-decoration: underline;">Telephone:</span>
+<p>+49 (0)30 2093&ndash;9799</p>
+<span style="text-decoration: underline;">Fax:</span>
+<p>+49 (0)30 2093&ndash;9729</p>
+<span style="text-decoration: underline;">E-Mail:</span> <a href="mailto:anke.luedeling@rz.hu-berlin.de">anke.luedeling@rz.hu-berlin.de</a><!--?php 
+                $mail = 'anke.luedeling@rz.hu-berlin.de';
+                $myMail = $this---></td>
+<td><strong>Prof. Dr. Peter Schirmbacher</strong><br /> <span style="text-decoration: underline;">Visiting Address:</span>
+<p>Rudower Chaussee 26, Raum 2'116, 12489 Berlin - Adlershof</p>
+<span style="text-decoration: underline;">Postal Address:</span>
+<p><a href="https://www.ibi.hu-berlin.de/" target="_blank">Institut f&uuml;r Bibliotheks- und Informationswissenschaft</a>,&nbsp;<a href="http://cms.hu-berlin.de/" target="_blank">Computer- und Medienservice</a><br /> Humboldt-Universit&auml;t zu Berlin<br /> Unter den Linden 6, D-10099 Berlin</p>
+<span style="text-decoration: underline;">Telephone:</span>
+<p>+49 (0)30 2093-70010</p>
+<span style="text-decoration: underline;">Fax:</span>
+<p>+49 (0)30 2093-2959</p>
+<span style="text-decoration: underline;">E-Mail:</span> <a href="mailto:schirmbacher@cms.hu-berlin.de">schirmbacher@cms.hu-berlin.de</a><!--?php 
+                $mail = 'schirmbacher@cms.hu-berlin.de';
+                $myMail = $this---></td>
+</tr>
+<tr>
+<td><strong>Laurent Romary, PhD Habil.</strong><br /> <span style="text-decoration: underline;">Visiting Address:</span>
+<p>Dorotheenstra&szlig;e 24, Raum 3.403, 10117 Berlin - Mitte</p>
+<span style="text-decoration: underline;">Postal Address:</span>
+<p><a href="https://www.linguistik.hu-berlin.de/" target="_blank">Institut f&uuml;r deutsche Sprache und Linguistik</a>,&nbsp;<a href="http://fakultaeten.hu-berlin.de/philfak2/" target="_blank">Philosophische Fakult&auml;t II</a><br /> Humboldt-Universit&auml;t zu Berlin<br /> Unter den Linden 6, D-10099 Berlin</p>
+<span style="text-decoration: underline;">E-Mail:</span> <a href="mailto:laurent.romary@inria.fr">laurent.romary@inria.fr</a></td>
+</tr>
+</tbody>
+</table>
+</div>

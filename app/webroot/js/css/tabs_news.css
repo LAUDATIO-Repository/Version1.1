@@ -1,0 +1,103 @@
+.itemdiv {
+    padding-top: 20px;
+    width:100%;
+    max-height: 100%;
+    margin: 20px auto 20px auto;
+    display:inline-block;
+
+    vertical-align:top;
+    clear:none;
+}
+
+.itemdiv dl.tabs {
+    width: 93%;
+    max-height:100%;
+}
+
+dl.tabs {
+    position:relative;
+}
+
+dl.tabs dt {
+    border:none;
+    color:#333;
+    display: inline-block;
+    padding: 5px 5px 2px 2px;
+    font-size:100%;
+    margin:0 2px 0 0;
+    width:auto;
+    height: 14%;
+}
+
+dl.tabs dt img{
+    margin-left: 5px;
+}
+
+dl.tabs dd {
+    width: 125%;
+    /*width: 150%;*/
+    padding:0.5%;
+    /*background:#FCFCFC;*/
+    overflow: auto;
+}
+
+/* if JS is ACTIVATED, enable new style to dl.tabs */
+dl.tabs.enabled {
+    /*height:332px;*/
+    /*max-height:auto;*/
+}
+
+dl.tabs.enabled dt {
+    /*cursor:pointer;*/
+    /*border-radius: 4px;*/
+}
+
+dl.tabs.enabled dt:hover {
+    background-color:#d2d2d2;
+    color:#fff;
+}
+
+dl.tabs.enabled dt.active {
+    /*background: #FCFCFC;*/
+    padding:0;
+    /*
+    margin: 0;
+    float: left;
+    clear:both;
+    border:none;
+    color:#000;
+    border-radius: 4px;
+    */
+}
+
+dl.tabs.enabled dd {
+    top:34px;
+    left:0;
+    margin:0px;
+    z-index:1;
+    clear:both;
+    border-radius: 4px;
+    /*margin-bottom: 20px;*/
+}
+
+dl.tabs.enabled dd.abs {
+    position:absolute;
+}
+
+dl.tabs.enabled dd.active {
+    z-index:3;
+}
+
+dl.tabs.enabled dd.active ul li {
+    list-style-type:decimal;
+    text-decoration: none;
+}
+
+dl.tabs.enabled dd.active ul ul li {
+    list-style-type:upper-roman;
+}
+
+div.centeredContent{
+    width:90%;
+    margin-left: 2%;
+}

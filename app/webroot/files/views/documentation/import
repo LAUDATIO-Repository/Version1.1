@@ -1,0 +1,6 @@
+<ul>
+<li><strong>Registration:</strong> You need to be registered (create an <a href="x_m_l_objects/../../../repository/Users/requestAccount">account</a>) to upload corpora. If you already have a HU-Account you need not to create a new account. You can use your HU-account instead.</li>
+<li><strong>Import</strong> a corpus and fill in the 'Corpus Name' with an ID which might be an acronym, e.g. 'laudatio:RIDGES' for 'Register in German Science' and a 'Corpus Label' which should be the full name of the corpus, e.g. 'Register in German Science'.</li>
+<li><strong>Upload</strong> the metadata as a TEI XML file. You find the scheme (RNG or DTD) and documentation (TEI ODD) for the merged TEI-Header and the full workflow description for compiling the metadata in the 'Documentation' navigation bar. You only need to upload the merged TEI XML file for the whole corpus. The metadata will be validated against the scheme. You will get feedback whether the TEI XML file is valid or not.</li>
+<li><strong>Upload</strong> the corpus formats. A corpus may have several formats. You can upload a zipped file for each format. Add the display name of the format.</li>
+</ul>
