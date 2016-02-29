@@ -18,7 +18,7 @@ Used software tools
 ===================
   Fedora Commons
   --------------
-  Version 3.6
+  Version 3.7
   
   <b>Installation</b><br>
   apt-get install apache2
