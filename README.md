@@ -1,7 +1,7 @@
 LAUDATIO-Repository Version 1.1
 ===============================
 
-Copyright: © 2016 Computer- and Media Service, Humboldt-Universität zu Berlin
+Copyright: © 2016 Computer- and Media Service, Humboldt-Universität zu Berlin<br>
   License: GNU GENERAL PUBLIC LICENSE 3.0
    Status: Draft
   Version: 1.1<br>
