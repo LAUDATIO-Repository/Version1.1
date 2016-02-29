@@ -9,8 +9,8 @@ Copyright: © 2016 Computer- and Media Service, Humboldt-Universität zu Berlin
            <li>Dennis Zielke, Computer- and Media Service, Humboldt-Universität zu Berlin,</li>
            <li>Malte Dreyer Computer- and Media Service, Humboldt-Universität zu Berlin,</li>
 	   <li>Alexander Petrus Computer- and Media Service, Humboldt-Universität zu Berlin</li></ul>
-  <ul>Ex-Authors:<br> 
-           <li>Tino Schernickau Computer- and Media Service, Humboldt-Universität zu Berlin</li></ul>
+  Ex-Authors:
+           <li>Tino Schernickau Computer- and Media Service, Humboldt-Universität zu Berlin</li>
 
 The concept of this repository infrastructure software for a particular sub-discipline of linguistics (historical corpus linguistics) is modular. The modules of the repository correspond to the application features presentation, storage, indexing and retrieval, as well as management of Persistent Identifiers (PID). 
 
