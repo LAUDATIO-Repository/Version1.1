@@ -84,8 +84,6 @@ Used software tools
 
   ElasticSearch
   -------------
-  Version 0.9
-  
   Installation details can be found here:
 
   <b>API</b><br> 
