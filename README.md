@@ -4,7 +4,7 @@ LAUDATIO-Repository Version 1.1
 Copyright: © 2016 Computer- and Media Service, Humboldt-Universität zu Berlin
   License: GNU GENERAL PUBLIC LICENSE 3.0
    Status: Draft
-  Version: 1.1
+  Version: 1.1<br>
   Authors:
            <ul><li>Dennis Zielke, Computer- and Media Service, Humboldt-Universität zu Berlin,</li>
            <li>Malte Dreyer Computer- and Media Service, Humboldt-Universität zu Berlin,</li>
