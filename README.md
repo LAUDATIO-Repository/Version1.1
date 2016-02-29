@@ -5,10 +5,10 @@ Copyright: © 2016 Computer- and Media Service, Humboldt-Universität zu Berlin
   License: GNU GENERAL PUBLIC LICENSE 3.0
    Status: Draft
   Version: 1.1
-  <ul>Authors:
+  Authors:
            <li>Dennis Zielke, Computer- and Media Service, Humboldt-Universität zu Berlin,</li>
            <li>Malte Dreyer Computer- and Media Service, Humboldt-Universität zu Berlin,</li>
-	   <li>Alexander Petrus Computer- and Media Service, Humboldt-Universität zu Berlin</li></ul>
+	   <li>Alexander Petrus Computer- and Media Service, Humboldt-Universität zu Berlin</li>
   Ex-Authors:
            <li>Tino Schernickau Computer- and Media Service, Humboldt-Universität zu Berlin</li>
 
